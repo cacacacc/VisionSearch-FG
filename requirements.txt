@@ -1,15 +1,26 @@
-torch
-torchvision
-timm
-numpy
-pandas
-scikit-learn
-matplotlib
-tqdm
-pyyaml
-pillow
-faiss-cpu
-opencv-python
-grad-cam
-pytest
-ruff
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Core deep learning stack for lightweight laptop training.
+torch==2.11.0+cpu
+torchvision==0.26.0+cpu
+
+# Modern visual backbones for ViT / Swin Transformer experiments.
+timm==1.0.28
+
+# Numerical computing and experiment analysis.
+numpy==1.26.4
+pandas==2.3.3
+scikit-learn==1.7.2
+matplotlib==3.10.9
+tqdm==4.68.1
+PyYAML==6.0.3
+Pillow==12.2.0
+
+# Retrieval and explainability phases.
+faiss-cpu==1.15.0
+opencv-python==4.10.0.84
+grad-cam==1.5.5
+
+# Development tools.
+pytest==9.1.1
+ruff==0.16.3

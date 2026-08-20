@@ -2,7 +2,7 @@
 name = "visionsearch-fg"
 version = "0.1.0"
 description = "Fine-grained visual representation learning and image retrieval with PyTorch."
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.12"
 
 [tool.ruff]
 line-length = 100
@@ -14,3 +14,4 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--basetemp=.pytest_tmp -p no:cacheprovider"

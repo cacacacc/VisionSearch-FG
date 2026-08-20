@@ -1,12 +1,12 @@
-# Phase 0 Day 1: Project Initialization
+# Phase 0 Day 1：项目初始化
 
-## Motivation
+## Motivation：为什么做
 
 科研项目不是只写一个训练脚本，而是要能持续迭代、复现实验、比较方法并解释结果。因此第一天先搭建项目结构。
 
-## Why These Modules Exist
+## 为什么需要这些模块
 
-| Module | Why | Pipeline Position |
+| 模块 | 为什么存在 | Pipeline 位置 |
 | --- | --- | --- |
 | `configs/` | 固化实验设置，避免每次手改代码造成实验不可复现 | 训练、验证、检索前读取 |
 | `data/` | 放原始数据和预处理结果，但不提交大文件 | Dataset / DataLoader 输入 |
@@ -19,12 +19,12 @@
 | `outputs/` | 保存实验产物，不提交到 Git | checkpoints / logs / figures |
 | `tests/` | 检查关键模块行为，降低后续重构风险 | 开发过程 |
 
-## First Baseline Tensor Flow
+## 第一个 Baseline 的 Tensor 流
 
 Phase 1 的 ResNet-18 baseline 会遵循下面的数据流：
 
 ```text
-image file
+image file 图片文件
 -> PIL image
 -> transform
 -> image tensor: [B, 3, 224, 224]
@@ -35,7 +35,7 @@ image file
 -> cross entropy loss
 ```
 
-## Current Decision
+## 当前决策
 
 使用 ResNet-18 作为第一个 baseline，因为它计算量低、迁移学习成熟、便于在轻薄本上验证完整 pipeline。
 

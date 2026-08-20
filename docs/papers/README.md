@@ -1,16 +1,16 @@
-# Paper Reading Notes
+# 论文阅读笔记
 
 论文阅读统一使用以下结构：
 
-1. Research Problem
-2. Motivation
-3. Method
-4. Architecture
-5. Loss Function
-6. Experiment
-7. Limitation
-8. Project Connection
-9. Implementation Difficulty
+1. Research Problem：论文解决什么问题
+2. Motivation：为什么现有方法不足
+3. Method：核心方法是什么
+4. Architecture：模型结构如何
+5. Loss Function：优化目标是什么
+6. Experiment：实验如何证明有效
+7. Limitation：有什么不足
+8. Project Connection：如何应用到 VisionSearch-FG
+9. Implementation Difficulty：是否适合本项目和当前硬件
 
 优先阅读顺序：
 
