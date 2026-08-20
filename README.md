@@ -74,3 +74,34 @@ pip install -r requirements.txt
 4. 明确每个模块为什么存在
 
 下一步会进入 Phase 1：实现 ResNet-18 + CUB-200-2011 分类 baseline。
+
+## Phase 1 Smoke Tests
+
+在没有真实 CUB 数据集时，可以先运行 fake dataset smoke test：
+
+```powershell
+python scripts\smoke_test_cub_dataset.py
+```
+
+验证 ResNet-18 输入、embedding、logits shape：
+
+```powershell
+python scripts\smoke_test_resnet18.py
+```
+
+下载并解压 CUB-200-2011 后，确认目录类似：
+
+```text
+data/raw/CUB_200_2011/
+├── images/
+├── images.txt
+├── image_class_labels.txt
+├── train_test_split.txt
+└── classes.txt
+```
+
+然后检查真实数据集：
+
+```powershell
+python scripts\inspect_cub_dataset.py --split train
+```
