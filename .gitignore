@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data and experiment artifacts
+data/raw/*
+data/processed/*
+outputs/checkpoints/*
+outputs/logs/*
+outputs/embeddings/*
+outputs/figures/*
+
+# Keep directory placeholders
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!outputs/checkpoints/.gitkeep
+!outputs/logs/.gitkeep
+!outputs/embeddings/.gitkeep
+!outputs/figures/.gitkeep
+
+# Large model files
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Notebooks
+.ipynb_checkpoints/

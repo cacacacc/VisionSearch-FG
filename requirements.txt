@@ -1,0 +1,15 @@
+torch
+torchvision
+timm
+numpy
+pandas
+scikit-learn
+matplotlib
+tqdm
+pyyaml
+pillow
+faiss-cpu
+opencv-python
+grad-cam
+pytest
+ruff
