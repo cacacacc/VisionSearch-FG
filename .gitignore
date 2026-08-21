@@ -30,6 +30,9 @@ outputs/figures/*
 # Keep directory placeholders
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/splits/
+!data/processed/splits/*.txt
+!data/processed/splits/*.json
 !outputs/checkpoints/.gitkeep
 !outputs/logs/.gitkeep
 !outputs/embeddings/.gitkeep

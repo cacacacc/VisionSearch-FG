@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>冻结 backbone 与 Fine-tuning</title>
+    <link rel="stylesheet" href="../assets/course.css" />
+  </head>
+  <body>
+    <main>
+      <h1>冻结 backbone 与 Fine-tuning</h1>
+      <p>
+        本课的目标是理解迁移学习中的一个核心选择：只训练分类头，还是让整个 backbone
+        一起更新。
+      </p>
+
+      <h2>冻结 backbone</h2>
+      <pre><code>backbone.requires_grad = false
+classifier.requires_grad = true</code></pre>
+      <p>
+        这种设置计算成本低，适合先确认数据、标签、训练 loop 和验证指标是否正确。
+      </p>
+
+      <h2>非冻结 fine-tuning</h2>
+      <pre><code>backbone.requires_grad = true
+classifier.requires_grad = true</code></pre>
+      <p>
+        这种设置会更新更多参数，模型可以适配 CUB 的细粒度鸟类差异，但需要更小学习率和更谨慎的验证。
+      </p>
+
+      <h2>你需要记住的判断</h2>
+      <div class="note">
+        如果没有先跑通冻结 baseline，就直接 fine-tune，出现问题时很难判断是数据问题、训练问题，
+        还是优化策略问题。
+      </div>
+
+      <h2>检索练习</h2>
+      <div class="quiz">
+        <p>为什么非冻结 backbone 通常要用更小学习率？</p>
+        <button onclick="document.getElementById('answer').textContent='因为预训练 backbone 已经包含有用特征，过大学习率可能快速破坏这些特征。'">
+          显示答案
+        </button>
+        <p id="answer"></p>
+      </div>
+
+      <h2>参考资料</h2>
+      <p>
+        推荐阅读 PyTorch 官方迁移学习教程：
+        <a href="https://docs.pytorch.org/tutorials/beginner/transfer_learning_tutorial.html">
+          Transfer Learning for Computer Vision Tutorial
+        </a>
+        。
+      </p>
+    </main>
+  </body>
+</html>

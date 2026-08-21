@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -28,10 +28,12 @@ class CUB200Dataset(Dataset):
         root: str | Path,
         split: Split = "train",
         transform: Callable | None = None,
+        image_ids: Collection[int] | None = None,
     ) -> None:
         self.root = Path(root)
         self.split = split
         self.transform = transform
+        self.image_ids = set(image_ids) if image_ids is not None else None
 
         if split not in {"train", "test", "all"}:
             msg = f"Unsupported split: {split}. Expected one of: train, test, all."
@@ -77,6 +79,8 @@ class CUB200Dataset(Dataset):
             if self.split == "train" and not is_train:
                 continue
             if self.split == "test" and is_train:
+                continue
+            if self.image_ids is not None and image_id not in self.image_ids:
                 continue
 
             cub_class_id = labels[image_id]

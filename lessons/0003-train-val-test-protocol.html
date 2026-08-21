@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Train / Validation / Test 协议</title>
+    <link rel="stylesheet" href="../assets/course.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Train / Validation / Test 协议</h1>
+      <p>
+        本课的目标是理解为什么正式实验必须把训练、验证和最终测试分开。
+      </p>
+
+      <h2>三部分职责</h2>
+      <pre><code>Training:   更新模型参数
+Validation: 选择超参数和 best checkpoint
+Test:       最终一次性报告泛化结果</code></pre>
+
+      <h2>CUB 中的正确做法</h2>
+      <pre><code>Official Train 5,994
+  -> Training about 4,795
+  -> Validation about 1,199
+
+Official Test 5,794
+  -> Final Test Only</code></pre>
+
+      <div class="note">
+        如果你根据 test accuracy 调参，test set 就已经变成 validation set，最终结果会失去可信度。
+      </div>
+
+      <h2>实践命令</h2>
+      <pre><code>.\.venv\Scripts\python.exe scripts\create_cub_splits.py --root data\raw\CUB_200_2011 --seed 42</code></pre>
+
+      <h2>检索练习</h2>
+      <div class="quiz">
+        <p>如果不断看 test accuracy 来调学习率，问题是什么？</p>
+        <button onclick="document.getElementById('answer').textContent='test set 参与了模型选择，最终 test 结果不再是独立泛化评估。'">
+          显示答案
+        </button>
+        <p id="answer"></p>
+      </div>
+
+      <h2>参考资料</h2>
+      <p>
+        推荐阅读项目文档：
+        <a href="../docs/global_training_protocol.md">Global Training Protocol</a>。
+      </p>
+    </main>
+  </body>
+</html>

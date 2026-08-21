@@ -1,0 +1,40 @@
+project:
+  name: VisionSearch-FG
+  phase: phase1_baseline
+  seed: 42
+
+experiment:
+  name: baseline_resnet18_unfrozen_cpu_probe
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 224
+  num_workers: 0
+
+model:
+  backbone: resnet18
+  pretrained: true
+  freeze_backbone: false
+  embedding_dim: 512
+  num_classes: 200
+
+training:
+  epochs: 1
+  batch_size: 4
+  optimizer: adamw
+  learning_rate: 0.00001
+  weight_decay: 0.0001
+
+runtime:
+  max_train_batches: 20
+  max_val_batches: 40
+
+evaluation:
+  metrics:
+    - accuracy
+    - top5_accuracy
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs

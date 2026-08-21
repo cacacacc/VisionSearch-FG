@@ -19,6 +19,20 @@ Baseline -> Improvement -> Analysis
 
 不直接追求 SOTA，而是先建立可靠 baseline，再逐步加入 representation learning、retrieval 和 explainability 分析。
 
+正式实验遵守项目级训练规范：
+
+```text
+docs/global_training_protocol.md
+```
+
+核心原则：保留 CUB official test set 只做最终评估；所有模型选择、调参和 best checkpoint 选择都基于 official train 内部分出的 validation set。
+
+生成固定 train / validation / test split：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\create_cub_splits.py --root data\raw\CUB_200_2011 --seed 42
+```
+
 ## 阶段路线
 
 | 阶段 | 目标 | 主要方法 |
@@ -134,3 +148,30 @@ python scripts\train_baseline.py --epochs 1 --batch-size 2 --pretrained false --
 outputs/checkpoints/<experiment_name>/<timestamp>_<experiment_name>/
 outputs/logs/<experiment_name>/<timestamp>_<experiment_name>/
 ```
+
+## Phase 1 结果分析
+
+对已训练好的 baseline checkpoint 导出样本级预测、top-5 结果和高置信错误样本拼图：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\analyze_baseline_predictions.py `
+  --config configs\baseline_resnet18_frozen.yaml `
+  --checkpoint outputs\checkpoints\baseline_resnet18_frozen\20260821_200139_baseline_resnet18_frozen\best.pt `
+  --device cpu
+```
+
+输出目录：
+
+```text
+outputs/figures/baseline_error_analysis/<run_id>/
+```
+
+## Phase 1 Fine-tuning Probe
+
+非冻结 backbone 的 CPU 小规模 probe：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_unfrozen_cpu_probe.yaml --device cpu
+```
+
+这个配置只用于确认解冻 backbone 后训练链路可用，不作为正式精度对照。

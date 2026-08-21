@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Baseline 错误样本分析</title>
+    <link rel="stylesheet" href="../assets/course.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Baseline 错误样本分析</h1>
+      <p>
+        本课的目标是学会从一个分类模型的 checkpoint 中导出样本级证据：
+        每张图的真实类别、top-1 预测、top-5 预测和置信度。
+      </p>
+
+      <h2>核心判断</h2>
+      <p>
+        总体 accuracy 只能回答“模型整体对了多少”。错误样本分析回答的是
+        “模型具体在哪里失败”。这决定下一步是调训练策略、改 backbone，还是加入局部细节分析。
+      </p>
+
+      <pre><code>image -> model -> logits -> softmax -> top-k -> prediction record</code></pre>
+
+      <h2>你需要记住的 shape</h2>
+      <pre><code>image:  [B, 3, 224, 224]
+label:  [B]
+logits: [B, 200]
+probs:  [B, 200]
+top5:   [B, 5]</code></pre>
+
+      <div class="note">
+        CUB 有 200 类，随机 top-1 约为 0.5%。如果冻结 backbone 的 baseline 能到 20% 以上，
+        说明预训练特征已经提供了有效信号。
+      </div>
+
+      <h2>实践命令</h2>
+      <pre><code>.\.venv\Scripts\python.exe scripts\analyze_baseline_predictions.py `
+  --config configs\baseline_resnet18_frozen.yaml `
+  --checkpoint outputs\checkpoints\baseline_resnet18_frozen\20260821_200139_baseline_resnet18_frozen\best.pt `
+  --device cpu</code></pre>
+
+      <h2>检索练习</h2>
+      <div class="quiz">
+        <p>如果 top-5 很高但 top-1 明显偏低，优先说明什么？</p>
+        <button onclick="document.getElementById('answer').textContent='说明表征已经包含真实类别信息，但分类边界还不够好。下一步可以考虑 fine-tuning、学习率策略或更强分类头。'">
+          显示答案
+        </button>
+        <p id="answer"></p>
+      </div>
+
+      <h2>参考资料</h2>
+      <p>
+        推荐阅读 PyTorch 官方文档中关于
+        <a href="https://pytorch.org/docs/stable/generated/torch.topk.html">torch.topk</a>
+        和
+        <a href="https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html">softmax</a>
+        的说明。它们是 top-k accuracy 和置信度分析的基础。
+      </p>
+
+      <p>如果某一步不清楚，直接问我具体的 tensor shape 或代码执行路径。</p>
+    </main>
+  </body>
+</html>

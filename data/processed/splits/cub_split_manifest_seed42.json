@@ -1,0 +1,13 @@
+{
+  "dataset": "CUB-200-2011",
+  "seed": 42,
+  "val_ratio": 0.2,
+  "official_train_samples": 5994,
+  "official_test_samples": 5794,
+  "train_samples": 4794,
+  "val_samples": 1200,
+  "test_samples": 5794,
+  "train_ids_path": "data\\processed\\splits\\cub_train_ids_seed42.txt",
+  "val_ids_path": "data\\processed\\splits\\cub_val_ids_seed42.txt",
+  "test_ids_path": "data\\processed\\splits\\cub_test_ids.txt"
+}

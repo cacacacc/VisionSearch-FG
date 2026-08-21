@@ -16,7 +16,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from visionsearch_fg.data import CUB200Dataset, build_classification_transform
+from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
 from visionsearch_fg.engine import train_one_epoch, validate
 from visionsearch_fg.models import build_resnet18_classifier
 from visionsearch_fg.utils import load_yaml_config
@@ -111,7 +111,8 @@ def main() -> None:
 
     train_loader = build_dataloader(
         root=data_config["root"],
-        split="train",
+        split=data_config.get("train_split", "train"),
+        image_ids_path=data_config.get("train_ids_path"),
         image_size=data_config["image_size"],
         batch_size=batch_size,
         num_workers=data_config["num_workers"],
@@ -119,7 +120,8 @@ def main() -> None:
     )
     val_loader = build_dataloader(
         root=data_config["root"],
-        split="test",
+        split=data_config.get("val_split", "test"),
+        image_ids_path=data_config.get("val_ids_path"),
         image_size=data_config["image_size"],
         batch_size=batch_size,
         num_workers=data_config["num_workers"],
@@ -131,6 +133,7 @@ def main() -> None:
         pretrained=pretrained,
         freeze_backbone=freeze_backbone,
     ).to(device)
+    parameter_counts = count_parameters(model)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(
         (parameter for parameter in model.parameters() if parameter.requires_grad),
@@ -156,6 +159,12 @@ def main() -> None:
         "batch_size": batch_size,
         "pretrained": pretrained,
         "freeze_backbone": freeze_backbone,
+        "total_parameters": parameter_counts["total_parameters"],
+        "trainable_parameters": parameter_counts["trainable_parameters"],
+        "train_split": data_config.get("train_split", "train"),
+        "val_split": data_config.get("val_split", "test"),
+        "train_ids_path": data_config.get("train_ids_path"),
+        "val_ids_path": data_config.get("val_ids_path"),
         "max_train_batches": max_train_batches,
         "max_val_batches": max_val_batches,
     }
@@ -168,6 +177,8 @@ def main() -> None:
     print(f"batch_size: {batch_size}")
     print(f"pretrained: {pretrained}")
     print(f"freeze_backbone: {freeze_backbone}")
+    print(f"total_parameters: {parameter_counts['total_parameters']}")
+    print(f"trainable_parameters: {parameter_counts['trainable_parameters']}")
     print(f"run_id: {run_dirs['run_id']}")
     print(f"log_dir: {run_dirs['log_dir']}")
     print(f"checkpoint_dir: {run_dirs['checkpoint_dir']}")
@@ -224,14 +235,17 @@ def main() -> None:
 def build_dataloader(
     root: str,
     split: str,
+    image_ids_path: str | None,
     image_size: int,
     batch_size: int,
     num_workers: int,
     train: bool,
 ) -> DataLoader:
+    image_ids = read_image_ids(image_ids_path) if image_ids_path is not None else None
     dataset = CUB200Dataset(
         root=root,
         split=split,
+        image_ids=image_ids,
         transform=build_classification_transform(image_size=image_size, train=train),
     )
     return DataLoader(
@@ -249,6 +263,17 @@ def resolve_device(device_name: str) -> torch.device:
     if device_name == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
     return torch.device(device_name)
+
+
+def count_parameters(model: nn.Module) -> dict[str, int]:
+    total_parameters = sum(parameter.numel() for parameter in model.parameters())
+    trainable_parameters = sum(
+        parameter.numel() for parameter in model.parameters() if parameter.requires_grad
+    )
+    return {
+        "total_parameters": total_parameters,
+        "trainable_parameters": trainable_parameters,
+    }
 
 
 def create_run_dirs(

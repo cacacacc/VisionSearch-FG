@@ -49,3 +49,12 @@ def test_cub_dataset_reads_test_split(tmp_path: Path) -> None:
 
     assert len(dataset) == 1
     assert dataset[0]["image_id"] == 2
+
+
+def test_cub_dataset_filters_by_image_ids_inside_selected_split(tmp_path: Path) -> None:
+    _write_fake_cub(tmp_path)
+
+    dataset = CUB200Dataset(root=tmp_path, split="all", image_ids={2})
+
+    assert len(dataset) == 1
+    assert dataset[0]["image_id"] == 2
