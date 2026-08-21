@@ -115,3 +115,22 @@ python scripts\train_baseline.py --epochs 1 --batch-size 2 --pretrained false --
 ```
 
 这个命令只用于验证训练机制，不代表正式实验结果。
+
+推荐使用项目虚拟环境和配置文件运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_cpu_smoke.yaml --device cpu
+```
+
+冻结 backbone 的第一个 baseline：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_frozen.yaml --device cpu
+```
+
+每次运行都会生成独立输出目录：
+
+```text
+outputs/checkpoints/<experiment_name>/<timestamp>_<experiment_name>/
+outputs/logs/<experiment_name>/<timestamp>_<experiment_name>/
+```

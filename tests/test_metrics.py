@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import torch
 import pytest
+import torch
 
 from visionsearch_fg.engine import accuracy, top_k_accuracy
 

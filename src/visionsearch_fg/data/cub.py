@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 from PIL import Image
 from torch.utils.data import Dataset
-
 
 Split = Literal["train", "test", "all"]
 

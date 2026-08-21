@@ -6,6 +6,7 @@ __pycache__/
 .pytest_tmp/
 .ruff_cache/
 .mypy_cache/
+.torch_cache/
 
 # Environments
 .venv/
