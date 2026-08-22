@@ -175,3 +175,10 @@ outputs/figures/baseline_error_analysis/<run_id>/
 ```
 
 这个配置只用于确认解冻 backbone 后训练链路可用，不作为正式精度对照。
+
+正式 partial fine-tuning protocol：
+
+```powershell
+$env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
+.\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_partial_protocol.yaml --device cpu
+```

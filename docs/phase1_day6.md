@@ -65,6 +65,12 @@ configs/baseline_resnet18_frozen_protocol.yaml
 configs/baseline_resnet18_unfrozen_protocol.yaml
 ```
 
+正式 partial fine-tuning 配置：
+
+```text
+configs/baseline_resnet18_partial_protocol.yaml
+```
+
 运行 frozen protocol：
 
 ```powershell
@@ -77,6 +83,13 @@ $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 ```powershell
 $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 .\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_unfrozen_protocol.yaml --device cpu
+```
+
+运行 partial fine-tuning protocol：
+
+```powershell
+$env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
+.\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_partial_protocol.yaml --device cpu
 ```
 
 ## 配置语义

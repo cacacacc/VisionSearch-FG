@@ -95,6 +95,8 @@ def main() -> None:
         if args.freeze_backbone is not None
         else model_config.get("freeze_backbone", False)
     )
+    fine_tune_mode = model_config.get("fine_tune_mode")
+    trainable_backbone_layers = model_config.get("trainable_backbone_layers")
     max_train_batches = (
         args.max_train_batches
         if args.max_train_batches is not None
@@ -132,11 +134,18 @@ def main() -> None:
         num_classes=model_config["num_classes"],
         pretrained=pretrained,
         freeze_backbone=freeze_backbone,
+        fine_tune_mode=fine_tune_mode,
+        trainable_backbone_layers=trainable_backbone_layers,
     ).to(device)
     parameter_counts = count_parameters(model)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(
-        (parameter for parameter in model.parameters() if parameter.requires_grad),
+        build_optimizer_parameter_groups(
+            model=model,
+            backbone_lr=training_config.get("backbone_learning_rate"),
+            classifier_lr=training_config.get("classifier_learning_rate"),
+            default_lr=training_config["learning_rate"],
+        ),
         lr=training_config["learning_rate"],
         weight_decay=training_config["weight_decay"],
     )
@@ -159,8 +168,13 @@ def main() -> None:
         "batch_size": batch_size,
         "pretrained": pretrained,
         "freeze_backbone": freeze_backbone,
+        "fine_tune_mode": fine_tune_mode or ("frozen" if freeze_backbone else "full"),
+        "trainable_backbone_layers": trainable_backbone_layers,
         "total_parameters": parameter_counts["total_parameters"],
         "trainable_parameters": parameter_counts["trainable_parameters"],
+        "learning_rate": training_config["learning_rate"],
+        "backbone_learning_rate": training_config.get("backbone_learning_rate"),
+        "classifier_learning_rate": training_config.get("classifier_learning_rate"),
         "train_split": data_config.get("train_split", "train"),
         "val_split": data_config.get("val_split", "test"),
         "train_ids_path": data_config.get("train_ids_path"),
@@ -177,6 +191,8 @@ def main() -> None:
     print(f"batch_size: {batch_size}")
     print(f"pretrained: {pretrained}")
     print(f"freeze_backbone: {freeze_backbone}")
+    print(f"fine_tune_mode: {metadata['fine_tune_mode']}")
+    print(f"trainable_backbone_layers: {trainable_backbone_layers}")
     print(f"total_parameters: {parameter_counts['total_parameters']}")
     print(f"trainable_parameters: {parameter_counts['trainable_parameters']}")
     print(f"run_id: {run_dirs['run_id']}")
@@ -274,6 +290,31 @@ def count_parameters(model: nn.Module) -> dict[str, int]:
         "total_parameters": total_parameters,
         "trainable_parameters": trainable_parameters,
     }
+
+
+def build_optimizer_parameter_groups(
+    model: nn.Module,
+    backbone_lr: float | None,
+    classifier_lr: float | None,
+    default_lr: float,
+) -> list[dict]:
+    backbone_parameters = [
+        parameter for parameter in model.backbone.parameters() if parameter.requires_grad
+    ]
+    classifier_parameters = [
+        parameter for parameter in model.classifier.parameters() if parameter.requires_grad
+    ]
+
+    parameter_groups: list[dict] = []
+    if backbone_parameters:
+        parameter_groups.append({"params": backbone_parameters, "lr": backbone_lr or default_lr})
+    if classifier_parameters:
+        parameter_groups.append(
+            {"params": classifier_parameters, "lr": classifier_lr or default_lr}
+        )
+    if not parameter_groups:
+        raise RuntimeError("No trainable parameters found for optimizer")
+    return parameter_groups
 
 
 def create_run_dirs(
