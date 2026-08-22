@@ -495,6 +495,79 @@ Recall@5
 Recall@10
 mAP
 Query Latency
+Indexing Time
+```
+
+### Experiment 3.1：Brute Force vs FAISS Exact Search
+
+研究问题：
+
+```text
+在保持检索结果相同的情况下，FAISS 能否降低向量搜索成本？
+```
+
+固定：
+
+```text
+Embedding
+Validation split
+Query / gallery protocol
+Exclude query itself
+L2 normalization
+Cosine-equivalent inner product search
+```
+
+唯一改变：
+
+```text
+Search backend:
+Brute Force NumPy
+vs
+FAISS IndexFlatIP
+```
+
+预期：
+
+```text
+Recall@K 和 mAP 完全一致
+Ranking 完全一致或只在极少数浮点 tie 上不同
+Indexing time / query latency 用于工程成本比较
+```
+
+### Experiment 3.2：Exact vs Approximate Retrieval
+
+比较：
+
+```text
+Exact Search
+vs
+Approximate Search
+
+Flat
+IVF
+HNSW
+```
+
+研究问题：
+
+```text
+能够牺牲多少 Retrieval Accuracy 换取多少搜索速度？
+```
+
+评价：
+
+```text
+Search Recall@1 / 5 / 10
+Retrieval Recall@1 / 5 / 10
+Query Time
+Indexing Time
+Index Memory
+```
+
+Search Recall 用 exact Flat top-K 作为 reference，衡量 ANN 是否找回同一批 nearest neighbors。Retrieval Recall 衡量 ANN 的近似误差是否真正影响类别检索任务。该实验建立典型 ANN trade-off：
+
+```text
+Accuracy ↔ Speed
 ```
 
 ## 13. Phase 4：Swin-Tiny
