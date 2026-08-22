@@ -182,3 +182,20 @@ outputs/figures/baseline_error_analysis/<run_id>/
 $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 .\.venv\Scripts\python.exe scripts\train_baseline.py --config configs\baseline_resnet18_partial_protocol.yaml --device cpu
 ```
+
+Augmentation ablation 的 4 组配置见：
+
+```text
+docs/phase1_day8.md
+```
+
+Phase 2 CE retrieval baseline：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\evaluate_ce_retrieval.py `
+  --config configs\ablation_resnet18_fullft_aug_hflip.yaml `
+  --checkpoint outputs\checkpoints\ablation_resnet18_fullft_aug_hflip\20260822_144519_ablation_resnet18_fullft_aug_hflip\best.pt `
+  --split train `
+  --ids-path data\processed\splits\cub_val_ids_seed42.txt `
+  --device cpu
+```
