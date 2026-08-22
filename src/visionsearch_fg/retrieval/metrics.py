@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
+
+RetrievalMetric = Literal["cosine", "euclidean"]
 
 
 def l2_normalize(embeddings: np.ndarray, eps: float = 1e-12) -> np.ndarray:
@@ -13,6 +17,21 @@ def l2_normalize(embeddings: np.ndarray, eps: float = 1e-12) -> np.ndarray:
 def cosine_similarity_matrix(embeddings: np.ndarray) -> np.ndarray:
     normalized_embeddings = l2_normalize(embeddings)
     return normalized_embeddings @ normalized_embeddings.T
+
+
+def dot_product_similarity_matrix(embeddings: np.ndarray) -> np.ndarray:
+    if embeddings.ndim != 2:
+        raise ValueError("embeddings must have shape [num_samples, embedding_dim]")
+    return embeddings @ embeddings.T
+
+
+def euclidean_distance_matrix(embeddings: np.ndarray) -> np.ndarray:
+    if embeddings.ndim != 2:
+        raise ValueError("embeddings must have shape [num_samples, embedding_dim]")
+
+    squared_norms = np.sum(embeddings * embeddings, axis=1, keepdims=True)
+    squared_distances = squared_norms + squared_norms.T - 2.0 * (embeddings @ embeddings.T)
+    return np.sqrt(np.maximum(squared_distances, 0.0))
 
 
 def rank_gallery_for_queries(
@@ -30,6 +49,37 @@ def rank_gallery_for_queries(
         return ranked_indices[ranked_indices != query_indices].reshape(scores.shape[0], -1)
 
     return np.argsort(-scores, axis=1)
+
+
+def rank_gallery_by_distance(
+    distance: np.ndarray,
+    exclude_self: bool = True,
+) -> np.ndarray:
+    if distance.ndim != 2 or distance.shape[0] != distance.shape[1]:
+        raise ValueError("distance must be a square matrix")
+
+    scores = distance.copy()
+    if exclude_self:
+        np.fill_diagonal(scores, np.inf)
+        ranked_indices = np.argsort(scores, axis=1)
+        query_indices = np.arange(scores.shape[0])[:, None]
+        return ranked_indices[ranked_indices != query_indices].reshape(scores.shape[0], -1)
+
+    return np.argsort(scores, axis=1)
+
+
+def rank_embeddings(
+    embeddings: np.ndarray,
+    metric: RetrievalMetric,
+    exclude_self: bool = True,
+) -> np.ndarray:
+    if metric == "cosine":
+        similarity = cosine_similarity_matrix(embeddings)
+        return rank_gallery_for_queries(similarity, exclude_self=exclude_self)
+    if metric == "euclidean":
+        distance = euclidean_distance_matrix(embeddings)
+        return rank_gallery_by_distance(distance, exclude_self=exclude_self)
+    raise ValueError(f"Unsupported retrieval metric: {metric}")
 
 
 def recall_at_k(ranked_indices: np.ndarray, labels: np.ndarray, k: int) -> float:
@@ -72,12 +122,12 @@ def evaluate_retrieval(
     embeddings: np.ndarray,
     labels: np.ndarray,
     recall_ks: tuple[int, ...],
+    metric: RetrievalMetric = "cosine",
 ) -> dict:
     if embeddings.shape[0] != labels.shape[0]:
         raise ValueError("embeddings and labels must contain the same number of samples")
 
-    similarity = cosine_similarity_matrix(embeddings)
-    ranked_indices = rank_gallery_for_queries(similarity, exclude_self=True)
+    ranked_indices = rank_embeddings(embeddings=embeddings, metric=metric, exclude_self=True)
 
     metrics = {f"recall@{k}": recall_at_k(ranked_indices, labels, k) for k in recall_ks}
     metrics["mAP"] = mean_average_precision(ranked_indices, labels)

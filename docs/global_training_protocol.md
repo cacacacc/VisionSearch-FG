@@ -415,10 +415,14 @@ Training Epoch = 0
 
 ## 11. Phase 2 Retrieval Validation Split
 
-开发过程中先使用 validation，而不是 official test。
+开发过程中不要立即使用 official test。Phase 2 的 CE Retrieval Baseline、metric ablation、normalization ablation、dimension ablation 和后续 SupCon / Swin retrieval 对照，默认都先在 validation split 上完成。
 
 ```text
+Protocol target:
 Validation = about 1,199 images
+
+Current saved split:
+data/processed/splits/cub_val_ids_seed42.txt = 1,200 images
 ```
 
 将 validation 图片同时作为 query 和 gallery：
@@ -435,9 +439,23 @@ Search remaining Validation Images
 Gallery = Validation Images - Query Itself
 ```
 
-否则 query 与自身 embedding 的 cosine similarity 为 1，会制造假的高 top-1。
+否则会出现：
 
-最终模型确定后，在 official test 上运行完全相同 protocol。
+```text
+query embedding
+vs
+self embedding
+
+cosine similarity = 1
+```
+
+这会让 Top-1 永远先命中自己，得到假的高分。最终模型、checkpoint、metric、normalization、embedding dimension 和检索协议全部确定后，才在 official test 上运行完全相同 protocol：
+
+```text
+Official Test = 5,794 images
+Query = Official Test Image
+Gallery = Official Test Images - Query Itself
+```
 
 ## 12. Phase 3：FAISS
 

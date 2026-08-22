@@ -18,7 +18,9 @@ from visionsearch_fg.data import CUB200Dataset, build_classification_transform, 
 from visionsearch_fg.models import build_resnet18_classifier
 from visionsearch_fg.retrieval import (
     cosine_similarity_matrix,
+    euclidean_distance_matrix,
     evaluate_retrieval,
+    rank_gallery_by_distance,
     rank_gallery_for_queries,
 )
 from visionsearch_fg.utils import load_yaml_config
@@ -33,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split", choices=["train", "test", "all"], default="train")
     parser.add_argument("--ids-path", type=Path, required=True)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument("--metric", choices=["cosine", "euclidean"], default="cosine")
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/embeddings/ce_retrieval"))
@@ -80,16 +83,26 @@ def main() -> None:
 
     embeddings, records = extract_embeddings(model=model, dataloader=dataloader, device=device)
     labels = np.array([record["label"] for record in records], dtype=np.int64)
-    metrics = evaluate_retrieval(embeddings=embeddings, labels=labels, recall_ks=(1, 5, 10))
+    metrics = evaluate_retrieval(
+        embeddings=embeddings,
+        labels=labels,
+        recall_ks=(1, 5, 10),
+        metric=args.metric,
+    )
 
     run_id = args.checkpoint.parent.name
-    output_dir = args.output_dir / run_id
+    output_dir = args.output_dir / run_id / args.metric
     output_dir.mkdir(parents=True, exist_ok=True)
 
     np.save(output_dir / "embeddings.npy", embeddings)
     write_records_csv(records, output_dir / "records.csv")
 
-    top_results = build_top_results(embeddings=embeddings, records=records, top_k=10)
+    top_results = build_top_results(
+        embeddings=embeddings,
+        records=records,
+        top_k=10,
+        metric=args.metric,
+    )
     (output_dir / "top_results.json").write_text(
         json.dumps(top_results, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -100,6 +113,7 @@ def main() -> None:
         "config": str(args.config),
         "split": args.split,
         "ids_path": str(args.ids_path),
+        "metric": args.metric,
         "num_samples": len(records),
         "embedding_dim": int(embeddings.shape[1]),
         **metrics,
@@ -145,9 +159,18 @@ def build_top_results(
     embeddings: np.ndarray,
     records: list[dict[str, Any]],
     top_k: int,
+    metric: str,
 ) -> list[dict[str, Any]]:
-    similarity = cosine_similarity_matrix(embeddings)
-    ranked_indices = rank_gallery_for_queries(similarity, exclude_self=True)
+    if metric == "cosine":
+        score_matrix = cosine_similarity_matrix(embeddings)
+        ranked_indices = rank_gallery_for_queries(score_matrix, exclude_self=True)
+        score_name = "similarity"
+    elif metric == "euclidean":
+        score_matrix = euclidean_distance_matrix(embeddings)
+        ranked_indices = rank_gallery_by_distance(score_matrix, exclude_self=True)
+        score_name = "distance"
+    else:
+        raise ValueError(f"Unsupported retrieval metric: {metric}")
 
     results: list[dict[str, Any]] = []
     for query_index, query_record in enumerate(records):
@@ -160,7 +183,7 @@ def build_top_results(
                     "label": gallery_record["label"],
                     "class_name": gallery_record["class_name"],
                     "path": gallery_record["path"],
-                    "similarity": float(similarity[query_index, gallery_index]),
+                    score_name: float(score_matrix[query_index, gallery_index]),
                     "same_class": gallery_record["label"] == query_record["label"],
                 }
             )

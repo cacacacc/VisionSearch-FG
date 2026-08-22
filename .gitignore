@@ -25,6 +25,7 @@ data/processed/*
 outputs/checkpoints/*
 outputs/logs/*
 outputs/embeddings/*
+outputs/experiments/*
 outputs/figures/*
 
 # Keep directory placeholders
