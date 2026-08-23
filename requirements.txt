@@ -1,8 +1,10 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Core deep learning stack for lightweight laptop training.
-torch==2.11.0+cpu
-torchvision==0.26.0+cpu
+# install PyTorch CUDA separately
+# torch
+# torchvision
+# torchaudio
+
 
 # Modern visual backbones for ViT / Swin Transformer experiments.
 timm==1.0.28
