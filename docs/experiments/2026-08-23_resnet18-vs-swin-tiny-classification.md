@@ -36,9 +36,11 @@ CPU-only formal run 必须在结果表中记录 `device=cpu`、`batch_size=2` �
 
 | Model | Pretrained | Max Epoch | Best Epoch | Val Acc | Val Macro-F1 | Val Top-5 | Params | Train Time |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ResNet-18 Full FT + HFlip | ImageNet | 20 | 11 | 69.67% | 待补 | 89.33% | 11.28M | 待补 |
-| Swin-Tiny Full FT + HFlip | ImageNet | 30 | 待跑 | 待跑 | 待跑 | 待跑 | 待跑 | 待跑 |
+| ResNet-18 Full FT + HFlip | ImageNet | 20 | 11 | 69.67% | 未记录 | 89.33% | 11.28M | 未记录 |
+| Swin-Tiny Full FT + HFlip | ImageNet | 30 | 4 | 75.50% | 75.28% | 93.42% | 27.67M | 18.50 min |
+
+Swin-Tiny 使用 `configs/baseline_swin_tiny_protocol.yaml` 原配置在 RTX 4070 上运行。该配置使用 batch size 8、ImageNet pretrained Swin-Tiny、full fine-tuning、AdamW、backbone LR 5e-5、classifier LR 5e-4、weight decay 1e-4 和 early stopping patience 5。训练日志共记录 9 个 epoch，best checkpoint 位于 epoch 4；由于 epoch 5 到 epoch 9 的 validation accuracy 均未超过 75.50%，early stopping 在 epoch 9 后触发。最高 Top-5 accuracy 是 epoch 7 的 93.75%，表格中记录的是 best accuracy checkpoint 对应的 Top-5 accuracy 93.42%。
 
 ## Decision
 
-结果待 Swin-Tiny 训练完成后填写。判断时不能只看 Accuracy，还要同时看 Macro-F1、Parameter Count 和 Training Time。若 Swin-Tiny 提升明显，后续 retrieval 和 representation learning 可以优先迁移到 Swin backbone；若提升有限，则 ResNet-18 仍是更轻量、可解释、训练成本更低的默认 baseline。
+Swin-Tiny 在 classification validation 上明显优于 ResNet-18：Val Acc 从 69.67% 提升到 75.50%，提升 5.83 percentage points；Val Top-5 从 89.33% 提升到 93.42%，提升 4.09 percentage points。这个结果说明 Transformer-based backbone 在当前 CUB 细粒度分类设置下更强，但它也带来更高参数成本，27.67M 参数约为 ResNet-18 的 2.45 倍。下一步需要执行 Backbone Retrieval Comparison，验证更高分类性能是否同步转化为更好的 embedding retrieval quality。

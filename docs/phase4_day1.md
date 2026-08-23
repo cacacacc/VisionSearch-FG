@@ -55,9 +55,13 @@ CPU 正式训练会很慢，这是计算成本的一部分，不影响它作为�
 
 | Model | Pretrained | Max Epoch | Best Epoch | Val Acc | Val Macro-F1 | Val Top-5 | Params | Train Time |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ResNet-18 Full FT + HFlip | ImageNet | 20 | 11 | 69.67% | 待补 | 89.33% | 11.28M | 待补 |
-| Swin-Tiny Full FT + HFlip | ImageNet | 30 | 待跑 | 待跑 | 待跑 | 待跑 | 待跑 | 待跑 |
+| ResNet-18 Full FT + HFlip | ImageNet | 20 | 11 | 69.67% | 未记录 | 89.33% | 11.28M | 未记录 |
+| Swin-Tiny Full FT + HFlip | ImageNet | 30 | 4 | 75.50% | 75.28% | 93.42% | 27.67M | 18.50 min |
+
+Swin-Tiny 结果来自 `outputs/logs/baseline_swin_tiny_protocol/20260823_012929_baseline_swin_tiny_protocol/history.json` 和对应 `best.pt`。该 run 由 RTX 4070 执行，用户确认使用 `configs/baseline_swin_tiny_protocol.yaml` 原配置：batch size 8、ImageNet pretrained、full fine-tuning、backbone LR 5e-5、classifier LR 5e-4、weight decay 1e-4、early stopping patience 5。由于本地 `metadata.json` 曾保留 smoke test 信息，本实验以真实 `history.json`、`best.pt` 内部 checkpoint metadata 和用户确认的训练配置为准。
+
+Swin-Tiny 在 epoch 4 达到最高 validation accuracy 75.50%，之后连续 5 个 epoch 没有超过该指标，因此 early stopping 在 epoch 9 结束。最高 Top-5 accuracy 出现在 epoch 7，为 93.75%；上表为了和主指标 checkpoint 对齐，记录 best accuracy checkpoint 对应的 Top-5 accuracy 93.42%。
 
 ## 判断标准
 
-如果 Swin-Tiny 在 Accuracy 和 Macro-F1 上明显超过 ResNet-18，并且训练成本可接受，说明 Transformer-based backbone 对细粒度鸟类特征有更强表达能力。如果 Swin-Tiny 只提升很小但参数和训练时间显著增加，则后续应谨慎选择它作为默认 backbone。如果 Swin-Tiny 不如 ResNet-18，应先检查 LR、batch size、augmentation 和早停，而不是直接否定 Transformer backbone。
+当前结果支持 Swin-Tiny 在分类任务上优于 ResNet-18：Val Acc 提升 5.83 percentage points，Val Top-5 提升 4.09 percentage points，并且 Macro-F1 达到 75.28%。代价是参数量从 11.28M 增加到 27.67M，约为 ResNet-18 的 2.45 倍。下一步不能直接假设 Swin 的 retrieval embedding 也一定更好，必须执行 Phase 4.2 的 backbone retrieval comparison。

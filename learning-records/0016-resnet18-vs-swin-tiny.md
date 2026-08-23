@@ -14,4 +14,6 @@ Phase 4 开始比较 ResNet-18 与 Swin-Tiny。ResNet 是 CNN backbone，Swin-Ti
 
 ## 后续行动
 
-运行 `configs/baseline_swin_tiny_protocol.yaml`，记录 Accuracy、Macro-F1、Top-5 Accuracy、Parameter Count 和 Training Time，并与 ResNet-18 Full FT + HFlip baseline 放入同一张对照表。
+已运行 `configs/baseline_swin_tiny_protocol.yaml` 原配置，并将 Swin-Tiny 与 ResNet-18 Full FT + HFlip 放入同一张对照表。Swin-Tiny 在 RTX 4070 上训练，best epoch 为 4，Val Acc 为 75.50%，Val Macro-F1 为 75.28%，best checkpoint 对应 Val Top-5 为 93.42%。相比 ResNet-18 的 69.67% Val Acc 和 89.33% Val Top-5，Swin-Tiny 分类性能更好，但参数量也从 11.28M 增加到 27.67M。
+
+下一步不是直接宣布 Swin 全面优于 ResNet，而是用同一个 validation retrieval protocol 比较 ResNet feature 和 Swin feature。这个实验会回答：classification accuracy 更高的 backbone，是否一定产生更好的 retrieval embedding。

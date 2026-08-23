@@ -14,4 +14,6 @@ Classification accuracy 和 retrieval quality 是相关但不等价的指标。�
 
 ## 后续行动
 
-Swin-Tiny classification 训练完成后，用 `scripts/evaluate_ce_retrieval.py` 提取 Swin feature 并计算 Recall@1/5/10 和 mAP，再用 `scripts/compare_backbone_retrieval.py` 汇总 ResNet 与 Swin 的 retrieval 对照表。
+已完成 Swin-Tiny retrieval evaluation，并用 `scripts/compare_backbone_retrieval.py` 汇总 ResNet 与 Swin 的 retrieval 对照表。结果显示 Swin-Tiny 的 classification Val Acc 为 75.50%，高于 ResNet-18 的 69.67%；retrieval 上 Swin-Tiny 也更好，Recall@1 为 61.25%，Recall@5 为 84.33%，Recall@10 为 90.67%，mAP 为 49.04%。ResNet-18 对应为 Recall@1 58.25%，Recall@5 80.75%，Recall@10 87.42%，mAP 47.76%。
+
+这个结果说明更强 backbone 对 retrieval embedding 有帮助，但提升并不和 classification accuracy 等比例增长。Swin-Tiny 的 Val Acc 提升 5.83 percentage points，而 mAP 只提升 1.28 percentage points，因此后续仍需要 SupCon 或 CE+SupCon 来直接优化 embedding geometry。
