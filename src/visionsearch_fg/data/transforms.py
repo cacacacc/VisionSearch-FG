@@ -49,6 +49,29 @@ def build_classification_transform(
     return _with_normalization([transforms.Resize((image_size, image_size))])
 
 
+class TwoViewTransform:
+    """Apply the same transform pipeline twice to create two augmented views."""
+
+    def __init__(self, base_transform: transforms.Compose) -> None:
+        self.base_transform = base_transform
+
+    def __call__(self, image):
+        return self.base_transform(image), self.base_transform(image)
+
+
+def build_two_view_transform(
+    image_size: int = 224,
+    augmentation: AugmentationName = "rrc_hflip_colorjitter",
+) -> TwoViewTransform:
+    return TwoViewTransform(
+        build_classification_transform(
+            image_size=image_size,
+            train=True,
+            augmentation=augmentation,
+        )
+    )
+
+
 def _with_normalization(transform_steps: list) -> transforms.Compose:
     return transforms.Compose(
         [

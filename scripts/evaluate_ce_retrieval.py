@@ -72,7 +72,7 @@ def main() -> None:
 
     model = build_model(model_config=model_config).to(device)
     checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state_dict"], strict=False)
     model.eval()
 
     embeddings, records = extract_embeddings(model=model, dataloader=dataloader, device=device)
