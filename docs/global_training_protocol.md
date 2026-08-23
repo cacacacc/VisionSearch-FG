@@ -609,6 +609,51 @@ Early Stopping: 5
 完整报告配置
 ```
 
+Experiment 4.1 比较：
+
+```text
+ResNet-18
+vs
+Swin-Tiny
+```
+
+评价：
+
+```text
+Accuracy
+Macro-F1
+Top-5 Accuracy
+Parameter Count
+Training Time
+```
+
+这里不要求 ResNet 和 Swin 的 learning rate 完全相同。公平比较的核心是数据、split、resolution、augmentation、训练预算和 evaluation protocol 可比，同时每个模型使用合理训练配置。
+
+Experiment 4.2 比较：
+
+```text
+ResNet Feature
+vs
+Swin Feature
+```
+
+执行完全相同 retrieval protocol：
+
+```text
+Validation query/gallery
+Exclude query itself
+L2-normalized cosine similarity
+Recall@1 / Recall@5 / Recall@10 / mAP
+```
+
+研究问题：
+
+```text
+分类表现更好的 backbone 是否一定产生更好的 retrieval embedding？
+```
+
+如果出现 `Swin Accuracy > ResNet` 但 `Swin Recall@10 ≈ ResNet`，这不是失败结果，而是说明 classification objective 和 retrieval embedding geometry 不完全等价，后续 SupCon 或 metric learning 更有研究必要。
+
 ## 14. Phase 5：SupCon / Multi-task Learning
 
 模型结构：

@@ -6,6 +6,7 @@ import random
 import re
 import shutil
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -18,12 +19,12 @@ from torch.utils.data import DataLoader
 
 from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
 from visionsearch_fg.engine import train_one_epoch, validate
-from visionsearch_fg.models import build_resnet18_classifier
+from visionsearch_fg.models import build_resnet18_classifier, build_swin_tiny_classifier
 from visionsearch_fg.utils import load_yaml_config
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train the ResNet-18 CUB baseline.")
+    parser = argparse.ArgumentParser(description="Train CUB classification baselines.")
     parser.add_argument(
         "--experiment-name",
         type=str,
@@ -48,7 +49,7 @@ def parse_args() -> argparse.Namespace:
         "--freeze-backbone",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Override whether to freeze the ResNet backbone.",
+        help="Override whether to freeze the visual backbone.",
     )
     parser.add_argument(
         "--max-train-batches",
@@ -132,8 +133,8 @@ def main() -> None:
         train=False,
     )
 
-    model = build_resnet18_classifier(
-        num_classes=model_config["num_classes"],
+    model = build_model(
+        model_config=model_config,
         pretrained=pretrained,
         freeze_backbone=freeze_backbone,
         fine_tune_mode=fine_tune_mode,
@@ -160,12 +161,16 @@ def main() -> None:
     shutil.copy2(args.config, run_dirs["log_dir"] / "config.yaml")
 
     best_accuracy = -1.0
+    best_epoch = 0
+    epochs_without_improvement = 0
+    early_stopping_patience = training_config.get("early_stopping_patience")
     history: list[dict] = []
     metadata = {
         "experiment_name": experiment_name,
         "run_id": run_dirs["run_id"],
         "config_path": str(args.config),
         "device": str(device),
+        "backbone": model_config.get("backbone", "resnet18"),
         "epochs": epochs,
         "batch_size": batch_size,
         "pretrained": pretrained,
@@ -177,6 +182,7 @@ def main() -> None:
         "learning_rate": training_config["learning_rate"],
         "backbone_learning_rate": training_config.get("backbone_learning_rate"),
         "classifier_learning_rate": training_config.get("classifier_learning_rate"),
+        "early_stopping_patience": early_stopping_patience,
         "augmentation": data_config.get("augmentation", "hflip"),
         "train_split": data_config.get("train_split", "train"),
         "val_split": data_config.get("val_split", "test"),
@@ -192,6 +198,7 @@ def main() -> None:
     print(f"device: {device}")
     print(f"epochs: {epochs}")
     print(f"batch_size: {batch_size}")
+    print(f"backbone: {metadata['backbone']}")
     print(f"pretrained: {pretrained}")
     print(f"freeze_backbone: {freeze_backbone}")
     print(f"fine_tune_mode: {metadata['fine_tune_mode']}")
@@ -203,6 +210,7 @@ def main() -> None:
     print(f"checkpoint_dir: {run_dirs['checkpoint_dir']}")
 
     for epoch in range(1, epochs + 1):
+        epoch_start = time.perf_counter()
         train_stats = train_one_epoch(
             model=model,
             dataloader=train_loader,
@@ -218,6 +226,7 @@ def main() -> None:
             device=device,
             max_batches=max_val_batches,
         )
+        epoch_time_seconds = time.perf_counter() - epoch_start
 
         row = {
             "epoch": epoch,
@@ -226,6 +235,8 @@ def main() -> None:
             "val_loss": val_stats.loss,
             "val_accuracy": val_stats.accuracy,
             "val_top5_accuracy": val_stats.top5_accuracy,
+            "val_macro_f1": val_stats.macro_f1,
+            "epoch_time_seconds": epoch_time_seconds,
             "train_samples": train_stats.num_samples,
             "val_samples": val_stats.num_samples,
         }
@@ -238,13 +249,28 @@ def main() -> None:
             "optimizer_state_dict": optimizer.state_dict(),
             "val_accuracy": val_stats.accuracy,
             "val_top5_accuracy": val_stats.top5_accuracy,
+            "val_macro_f1": val_stats.macro_f1,
             "config": config,
             "metadata": metadata,
         }
         torch.save(checkpoint, run_dirs["checkpoint_dir"] / "last.pt")
         if val_stats.accuracy > best_accuracy:
             best_accuracy = val_stats.accuracy
+            best_epoch = epoch
+            epochs_without_improvement = 0
             torch.save(checkpoint, run_dirs["checkpoint_dir"] / "best.pt")
+        else:
+            epochs_without_improvement += 1
+
+        if (
+            early_stopping_patience is not None
+            and epochs_without_improvement >= early_stopping_patience
+        ):
+            print(
+                "early_stopping: "
+                f"best_epoch={best_epoch}, patience={early_stopping_patience}"
+            )
+            break
 
     log_path = run_dirs["log_dir"] / "history.json"
     log_path.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -279,6 +305,32 @@ def build_dataloader(
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),
     )
+
+
+def build_model(
+    model_config: dict,
+    pretrained: bool,
+    freeze_backbone: bool,
+    fine_tune_mode: str | None,
+    trainable_backbone_layers: list[str] | None,
+) -> nn.Module:
+    backbone = model_config.get("backbone", "resnet18")
+    if backbone == "resnet18":
+        return build_resnet18_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=freeze_backbone,
+            fine_tune_mode=fine_tune_mode,
+            trainable_backbone_layers=trainable_backbone_layers,
+        )
+    if backbone in {"swin_tiny", "swin_t"}:
+        return build_swin_tiny_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=freeze_backbone,
+            fine_tune_mode=fine_tune_mode,
+        )
+    raise ValueError(f"Unsupported backbone: {backbone}")
 
 
 def resolve_device(device_name: str) -> torch.device:

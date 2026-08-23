@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
-from visionsearch_fg.models import build_resnet18_classifier
+from visionsearch_fg.models import build_resnet18_classifier, build_swin_tiny_classifier
 from visionsearch_fg.retrieval import (
     cosine_similarity_matrix,
     euclidean_distance_matrix,
@@ -28,7 +28,7 @@ from visionsearch_fg.utils import load_yaml_config
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Evaluate CE-trained ResNet embeddings for retrieval."
+        description="Evaluate CE-trained classifier embeddings for retrieval."
     )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -70,13 +70,7 @@ def main() -> None:
         pin_memory=torch.cuda.is_available(),
     )
 
-    model = build_resnet18_classifier(
-        num_classes=model_config["num_classes"],
-        pretrained=False,
-        freeze_backbone=model_config.get("freeze_backbone", False),
-        fine_tune_mode=model_config.get("fine_tune_mode"),
-        trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
-    ).to(device)
+    model = build_model(model_config=model_config).to(device)
     checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
@@ -113,6 +107,7 @@ def main() -> None:
         "config": str(args.config),
         "split": args.split,
         "ids_path": str(args.ids_path),
+        "backbone": model_config.get("backbone", "resnet18"),
         "metric": args.metric,
         "num_samples": len(records),
         "embedding_dim": int(embeddings.shape[1]),
@@ -189,6 +184,26 @@ def build_top_results(
             )
         results.append({"query": query_record, "neighbors": neighbors})
     return results
+
+
+def build_model(model_config: dict) -> torch.nn.Module:
+    backbone = model_config.get("backbone", "resnet18")
+    if backbone == "resnet18":
+        return build_resnet18_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=False,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+            trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
+        )
+    if backbone in {"swin_tiny", "swin_t"}:
+        return build_swin_tiny_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=False,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+        )
+    raise ValueError(f"Unsupported backbone: {backbone}")
 
 
 def write_records_csv(records: list[dict[str, Any]], output_path: Path) -> None:

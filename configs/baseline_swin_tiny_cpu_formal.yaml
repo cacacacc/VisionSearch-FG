@@ -1,0 +1,52 @@
+project:
+  name: VisionSearch-FG
+  phase: phase4_swin_tiny_classification_cpu
+  seed: 42
+
+experiment:
+  name: baseline_swin_tiny_cpu_formal
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 224
+  augmentation: hflip
+  num_workers: 0
+  train_split: train
+  val_split: train
+  train_ids_path: data/processed/splits/cub_train_ids_seed42.txt
+  val_ids_path: data/processed/splits/cub_val_ids_seed42.txt
+
+model:
+  backbone: swin_tiny
+  pretrained: true
+  freeze_backbone: false
+  fine_tune_mode: full
+  embedding_dim: 768
+  num_classes: 200
+
+training:
+  epochs: 30
+  batch_size: 2
+  optimizer: adamw
+  learning_rate: 0.0001
+  backbone_learning_rate: 0.00005
+  classifier_learning_rate: 0.0005
+  weight_decay: 0.0001
+  early_stopping_patience: 5
+
+runtime:
+  max_train_batches:
+  max_val_batches:
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+    - top5_accuracy
+    - parameter_count
+    - training_time
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs

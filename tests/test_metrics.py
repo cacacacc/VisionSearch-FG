@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
-from visionsearch_fg.engine import accuracy, top_k_accuracy
+from visionsearch_fg.engine import accuracy, macro_f1_score, top_k_accuracy
 
 
 def test_accuracy_computes_top1_accuracy() -> None:
@@ -30,3 +30,10 @@ def test_top_k_accuracy_counts_target_inside_top_k() -> None:
     targets = torch.tensor([1, 2, 0])
 
     assert top_k_accuracy(logits, targets, k=2) == pytest.approx(2 / 3)
+
+
+def test_macro_f1_score_averages_class_f1_scores() -> None:
+    predictions = torch.tensor([0, 0, 1, 1])
+    targets = torch.tensor([0, 1, 1, 1])
+
+    assert macro_f1_score(predictions, targets) == pytest.approx((2 / 3 + 4 / 5) / 2)
