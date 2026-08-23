@@ -47,13 +47,15 @@ outputs/experiments/faiss_exact_search/20260822_144519_ablation_resnet18_fullft_
 
 本实验记录 Recall@1、Recall@5、Recall@10、mAP、indexing time、总 query latency 和平均单 query latency。FAISS exact search 不应该改变检索指标；如果指标变化，优先检查 normalization、metric、self-exclusion 或 ranking 实现是否不一致。
 
-## 待记录结果
+## 结果
 
 | Method | Indexing ms | Search ms / Query | Recall@1 | Recall@5 | Recall@10 | mAP |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Brute Force NumPy | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 |
-| FAISS IndexFlatIP | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 |
+| Brute Force NumPy | 0.000 | 0.0541 | 58.25% | 80.75% | 87.42% | 47.76% |
+| FAISS IndexFlatIP | 1.537 | 0.0222 | 58.25% | 80.75% | 87.42% | 47.76% |
+
+本次输出位于 `outputs/experiments/faiss_exact_search/20260822_144519_ablation_resnet18_fullft_aug_hflip/summary.json` 和 `summary.csv`。`metric_delta` 全部为 0，说明 FAISS exact search 没有改变 Recall@K 或 mAP。`rankings_identical=false` 表示完整排序中存在同分或极小数值差异导致的 tie-order 不完全一致，但最终检索指标完全相同。
 
 ## 判断标准
 
-如果 `rankings_identical = true` 且 metric delta 全部为 0，说明 FAISS exact search 没有改变 embedding retrieval 结果，只改变搜索实现。若 FAISS latency 更低，可以作为后续检索默认后端；若当前 validation gallery 上优势不明显，也不代表 FAISS 无价值，因为 1,200 张 gallery 太小，大规模图库下 index/search backend 的差异会更明显。
+FAISS IndexFlatIP 的平均单 query search latency 从 0.0541 ms 降到 0.0222 ms，约为 Brute Force NumPy 的 41.08%，同时 Recall@1/5/10 和 mAP 完全不变。因此本实验验证了搜索后端优化不会改变 embedding 本身，也不会改变当前 retrieval 指标；后续可以把 FAISS exact search 作为工程检索后端。

@@ -23,9 +23,9 @@ cd D:\code\VisionSearch-FG
 
 | Method | Indexing ms | Search ms / Query | Recall@1 | Recall@5 | Recall@10 | mAP |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Brute Force NumPy | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 |
-| FAISS IndexFlatIP | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 |
+| Brute Force NumPy | 0.000 | 0.0541 | 58.25% | 80.75% | 87.42% | 47.76% |
+| FAISS IndexFlatIP | 1.537 | 0.0222 | 58.25% | 80.75% | 87.42% | 47.76% |
 
 ## Decision
 
-结果待填。预期 FAISS `IndexFlatIP` 与 Brute Force 的 ranking 和 retrieval metrics 完全一致，因为二者都是 exact inner-product search。若一致，后续 Phase 3 可以继续使用 FAISS；若不一致，需要先排查 self-exclusion、normalization 和 score direction。
+FAISS `IndexFlatIP` 与 Brute Force NumPy 的 Recall@1、Recall@5、Recall@10 和 mAP 完全一致，`metric_delta` 全部为 0。FAISS 的平均单 query search latency 为 0.0222 ms，低于 Brute Force 的 0.0541 ms；代价是需要 1.537 ms indexing time。`rankings_identical=false` 表示完整排序中存在同分或极小数值差异导致的 tie-order 不完全一致，但不影响检索指标。结论是 FAISS exact search 可以作为后续检索后端，因为它优化搜索成本但不改变 embedding retrieval 评价结果。
