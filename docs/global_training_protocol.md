@@ -1,12 +1,20 @@
-# Global Training Protocol：全局训练协议
+# 全局训练协议
 
-## 目标
+## 协议目标
 
 本协议定义 VisionSearch-FG 从 Phase 1 到 Phase 6 的统一数据划分、训练预算、验证流程和最终测试规则。
 
-项目的实验价值不只来自模型精度，还来自不同实验之间是否可比较。所有正式实验必须尽量控制变量：固定数据划分、固定评价协议、清楚记录训练预算，并只在最终阶段使用 official test set。
+项目的科研价值不仅来自模型精度，也来自不同实验之间是否可比较。所有正式实验必须尽量控制变量：固定数据划分、固定评价协议、清楚记录训练预算，并且只在最终阶段使用 official test set。
 
-## 1. Dataset Protocol
+最重要的原则：
+
+```text
+Test set 不用于调参。
+所有模型选择、超参数选择和 ablation 决策都先基于 validation set。
+最终协议固定后，才在 official test set 上做一次性评估。
+```
+
+## 1. 数据集协议
 
 数据集使用：
 
@@ -30,7 +38,7 @@ CUB-200-2011 包含 bounding box、part location 和 attributes 等标注，但�
 image + class label
 ```
 
-原因：不额外使用 bbox、part、attribute，可以避免给某些 baseline 带来额外 annotation 优势。
+原因：不额外使用 bbox、part、attribute，可以避免给某些 baseline 带来额外 annotation 优势，从而保持不同方法之间的公平性。
 
 参考资料：
 
@@ -57,13 +65,13 @@ Official CUB Dataset
 
 `Official Train -> Training / Validation` 使用固定随机种子和 stratified split，保证 200 个类别在 training 和 validation 中都存在。
 
-固定：
+固定随机种子：
 
 ```text
 random_seed = 42
 ```
 
-并保存划分结果：
+保存划分结果：
 
 ```text
 data/processed/splits/cub_train_ids_seed42.txt
@@ -94,7 +102,7 @@ Test set：
 禁止流程：
 
 ```text
-不断看 Test Accuracy
+不断查看 Test Accuracy
         ↓
 根据 Test 调参数
         ↓
@@ -117,13 +125,13 @@ Swin
 CrossEntropy
 SupCon
 CrossEntropy + SupCon
-Grad-CAM / Error Analysis
 Retrieval
+Grad-CAM / 错误分析
 ```
 
 如果 ResNet 使用 Split A，Swin 使用 Split B，那么两者最终精度差异无法归因于模型本身。
 
-## 5. Image Resolution
+## 5. 图像分辨率
 
 第一版统一：
 
@@ -141,9 +149,9 @@ Retrieval
 
 - ResNet-18 和 pretrained Swin-Tiny 都能方便使用 224 输入。
 - 当前计算资源有限，先降低训练成本。
-- 224 是一个合理的迁移学习起点。
+- 224 是迁移学习的合理起点。
 
-后续可独立做 resolution ablation：
+后续可以独立做 resolution ablation：
 
 ```text
 224 x 224
@@ -151,9 +159,9 @@ vs
 384 / 448
 ```
 
-该实验研究 fine-grained recognition 是否受益于更高分辨率，但不应该在 baseline 阶段引入。
+该实验研究 fine-grained recognition 是否受益于更高分辨率，但不应在 baseline 阶段引入。
 
-## 6. Data Augmentation
+## 6. 数据增强
 
 Training transform：
 
@@ -169,7 +177,7 @@ ToTensor
 ImageNet Normalization
 ```
 
-禁止默认使用：
+默认禁止：
 
 ```text
 Vertical Flip
@@ -189,7 +197,7 @@ ToTensor
 ImageNet Normalization
 ```
 
-Validation 和 test 不使用随机 augmentation，这样同一模型每次得到一致输入。
+Validation 和 test 不使用随机 augmentation，保证同一模型每次得到一致输入。
 
 ## 7. Batch Size
 
@@ -199,7 +207,7 @@ ResNet-18 第一版：
 batch_size = 32
 ```
 
-如果显存或内存不足：
+显存或内存不足时：
 
 ```text
 batch_size = 16
@@ -211,7 +219,7 @@ Swin-Tiny：
 batch_size = 16
 ```
 
-如果显存或内存不足：
+显存或内存不足时：
 
 ```text
 batch_size = 8
@@ -253,6 +261,14 @@ SupCon 需要特别注意：batch 中的其他样本会成为 positive / negativ
 ```text
 5 epoch pilot 只能判断 pipeline 是否正常，不能作为论文式正式结果。
 ```
+
+正式结果使用：
+
+```text
+best validation checkpoint
+```
+
+而不是默认使用最后一个 epoch。
 
 ## 9. Phase 1：ResNet-18 Baseline
 
@@ -342,13 +358,11 @@ Early Stopping: 5
 
 比较表：
 
-| Strategy | Max Epoch | Best Epoch | Val Acc | Test Acc |
+| 策略 | 最大 epoch | 最优 epoch | Val Acc | Test Acc |
 | --- | ---: | ---: | ---: | ---: |
 | Frozen | 10 | | | |
 | Partial FT | 25 | | | |
 | Full FT | 30 | | | |
-
-正式结果使用 best validation checkpoint，不默认使用最后一个 epoch。
 
 ### Experiment 1.4：Augmentation Ablation
 
@@ -449,7 +463,9 @@ self embedding
 cosine similarity = 1
 ```
 
-这会让 Top-1 永远先命中自己，得到假的高分。最终模型、checkpoint、metric、normalization、embedding dimension 和检索协议全部确定后，才在 official test 上运行完全相同 protocol：
+这会让 Top-1 永远先命中自己，得到假的高分。
+
+最终模型、checkpoint、metric、normalization、embedding dimension 和检索协议全部确定后，才在 official test 上运行完全相同 protocol：
 
 ```text
 Official Test = 5,794 images
@@ -496,6 +512,7 @@ Recall@10
 mAP
 Query Latency
 Indexing Time
+Index Memory
 ```
 
 ### Experiment 3.1：Brute Force vs FAISS Exact Search
@@ -564,11 +581,34 @@ Indexing Time
 Index Memory
 ```
 
-Search Recall 用 exact Flat top-K 作为 reference，衡量 ANN 是否找回同一批 nearest neighbors。Retrieval Recall 衡量 ANN 的近似误差是否真正影响类别检索任务。该实验建立典型 ANN trade-off：
+Search Recall 用 exact Flat top-K 作为 reference，衡量 ANN 是否找回同一批 nearest neighbors。Retrieval Recall 衡量 ANN 的近似误差是否真正影响类别检索任务。
+
+该实验建立典型 ANN trade-off：
 
 ```text
 Accuracy ↔ Speed
 ```
+
+### Experiment 3.3：定性检索分析
+
+不仅看数字，还要选择若干 query，展示：
+
+```text
+Query
+Top-1
+Top-5
+Top-10
+```
+
+分析维度：
+
+- 同类别结果
+- 外观相似但类别不同
+- 背景相似导致错误
+- 姿态相似
+- 局部特征相似
+
+这是后续改进 representation 的重要证据。
 
 ## 13. Phase 4：Swin-Tiny
 
@@ -626,8 +666,6 @@ Top-5 Accuracy
 Parameter Count
 Training Time
 ```
-
-这里不要求 ResNet 和 Swin 的 learning rate 完全相同。公平比较的核心是数据、split、resolution、augmentation、训练预算和 evaluation protocol 可比，同时每个模型使用合理训练配置。
 
 Experiment 4.2 比较：
 
@@ -705,7 +743,7 @@ CE 训练 10 轮
 SupCon 训练 50 轮
 ```
 
-否则训练预算成为 confounding variable。
+否则训练预算会成为 confounding variable。
 
 ### Experiment 5.2：Lambda Ablation
 
@@ -751,7 +789,59 @@ lambda
 | 0.5 | | | | | | |
 | 1.0 | | | | | | |
 
-### Experiment 5.3：Projection Dimension
+这张表是整个项目非常重要的 ablation study。
+
+### Experiment 5.3：Projection Head Ablation
+
+比较：
+
+```text
+Backbone -> SupCon
+vs
+Backbone -> Projection Head -> SupCon
+```
+
+研究问题：
+
+```text
+Projection Head 是否真正改善 Representation Learning？
+```
+
+固定：
+
+```text
+Dataset
+Split
+Backbone
+Augmentation
+Batch
+Optimizer
+LR
+Temperature
+lambda
+```
+
+唯一改变：
+
+```text
+SupCon loss 的输入：
+h = backbone feature
+vs
+z = projection head output
+```
+
+正式 retrieval evaluation 一律使用 backbone feature `h`，而不是 projection feature `z`。这样才能判断 projection head 是否帮助 backbone 学到更好的通用 representation。
+
+结果表：
+
+| Projection Head | SupCon 输入 | Accuracy | Recall@1 | Recall@5 | Recall@10 | mAP |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 无 | h | | | | | |
+| 有 | z | | | | | |
+
+该实验直接对应 SimCLR / SupCon 类论文中的设计思想。
+
+### Experiment 5.4：Projection Dimension
 
 候选：
 
@@ -812,7 +902,7 @@ Swin
 Grad-CAM
 Attention Visualization
 T-SNE / UMAP
-Error Analysis
+错误分析
 ```
 
 T-SNE / UMAP 建议从 validation 或 test 中采样：
@@ -837,10 +927,19 @@ T-SNE / UMAP 建议从 validation 或 test 中采样：
 | P4 | Swin-Tiny | about 4,795 train | 25-30 |
 | P5 | CE/SupCon/Joint | about 4,795 train | 30-40 |
 | P5 | Lambda Ablation | about 4,795 train | 30/group |
+| P5 | Projection Head Ablation | about 4,795 train | 30/group |
 | P5 | Embedding Dim Ablation | about 4,795 train | 30/group |
 | P6 | Visualization | Val/Test | 0 |
 
-这些数字不是理论规定，而是结合 CUB 数据规模、pretrained backbone、项目目标和计算预算制定的起始协议。正式结果使用 best validation checkpoint。
+这些数字不是理论规定，而是结合 CUB 数据规模、pretrained backbone、项目目标和计算预算制定的起始协议。
+
+正式结果最终使用：
+
+```text
+best validation checkpoint
+```
+
+而不是机械地取最后一轮。
 
 ## 17. Random Seeds
 
@@ -872,7 +971,7 @@ mean ± std
 Recall@10 = 84.7 ± 0.8
 ```
 
-这比单独报告一个数更有科研说服力，因为它说明提升不是某个随机初始化带来的偶然结果。
+这比单独报告一个数字更有科研说服力，因为它说明提升不是某个随机初始化带来的偶然结果。
 
 ## 18. 当前项目状态说明
 
@@ -890,4 +989,11 @@ Stratified Train / Validation
 最终只在 Official Test 上评估一次
 ```
 
-下一步工程任务是实现固定 train / validation / test split，并让训练脚本支持 `train`、`val`、`test` 三种评估语义。
+当前最需要严格遵守的一条是：
+
+```text
+Test 5,794 张图片不用于调参。
+所有实验决策首先根据约 1,199 张 validation 图片做出。
+```
+
+这样最后的 Test Accuracy、Recall@K 和 mAP 才真正具有可信度。
