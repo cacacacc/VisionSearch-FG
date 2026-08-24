@@ -1017,6 +1017,49 @@ HTML report
 CSV manual annotation table
 ```
 
+### Experiment 6.2：Attention Visualization
+
+研究问题：
+
+```text
+CNN 与 Transformer 是否使用不同视觉区域完成细粒度识别？
+```
+
+Swin-Tiny 分析区域：
+
+```text
+局部细节
+鸟主体
+背景
+```
+
+协议：
+
+```text
+Training Epoch = 0
+Model = Swin-Tiny best validation checkpoint
+Split = validation
+Target class = predicted class
+```
+
+当前 `torchvision.models.swin_t` 不直接返回 attention weights，因此第一版使用 gradient-weighted final-stage Swin feature map 作为 attention-style visualization。后续如需严格 attention rollout，可替换为返回 attention weights 的 Swin 实现。
+
+输出：
+
+```text
+Swin attention-style overlay images
+HTML report
+CSV manual annotation table
+```
+
+最终与 Experiment 6.1 对照：
+
+```text
+ResNet Grad-CAM
+vs
+Swin attention-style visualization
+```
+
 T-SNE / UMAP 建议从 validation 或 test 中采样：
 
 ```text
