@@ -1,0 +1,14 @@
+{
+  "num_variants": 2,
+  "variants": [
+    "CE",
+    "CE_SupCon_tau0_2"
+  ],
+  "num_selected_samples": 120,
+  "num_classes": 20,
+  "samples_per_class": 6,
+  "seed": 42,
+  "method": "tsne",
+  "perplexity": 30.0,
+  "note": "t-SNE/UMAP is qualitative evidence; quantitative conclusions should rely on Recall@K and mAP."
+}

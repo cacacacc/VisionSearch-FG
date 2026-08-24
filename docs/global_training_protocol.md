@@ -1060,6 +1060,48 @@ vs
 Swin attention-style visualization
 ```
 
+### Experiment 6.3：T-SNE / UMAP Representation Visualization
+
+研究问题：
+
+```text
+CE embedding 与 CE + SupCon embedding 是否呈现不同的类别聚类结构？
+```
+
+比较：
+
+```text
+CE Embedding
+vs
+CE + SupCon Embedding
+```
+
+预期：
+
+```text
+CE：
+类别存在一定分离，但同类样本可能较分散。
+
+CE + SupCon：
+同类别样本应形成更紧密 cluster。
+```
+
+协议：
+
+```text
+Training Epoch = 0
+Split = validation
+Same sampled image_ids for all variants
+Default = 20 classes x up to 6 images per class
+```
+
+注意：
+
+```text
+T-SNE / UMAP 是定性证据。
+主要结论仍然依赖 Recall@K / mAP 等定量指标。
+```
+
 T-SNE / UMAP 建议从 validation 或 test 中采样：
 
 ```text
