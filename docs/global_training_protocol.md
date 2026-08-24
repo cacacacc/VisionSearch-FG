@@ -898,6 +898,49 @@ Search Time
 | 256 | | | | | | | |
 | 512 | | | | | | | |
 
+### Experiment 5.5：Temperature Ablation
+
+候选：
+
+```text
+tau = 0.05 / 0.07 / 0.1 / 0.2
+```
+
+研究问题：
+
+```text
+SupCon temperature 如何影响 embedding distribution？
+```
+
+固定：
+
+```text
+lambda = 0.1
+Projection Head = MLP
+Projection Dim = Phase 5.4 selected main value
+SupCon feature = z
+```
+
+评价：
+
+```text
+Accuracy
+Recall@1 / Recall@5 / Recall@10
+mAP
+Train SupCon Loss
+```
+
+该实验优先级低于 lambda ablation、projection head ablation 和 embedding dimension ablation。只有在算力允许时完成。
+
+结果表：
+
+| Tau | Accuracy | Recall@1 | Recall@5 | Recall@10 | mAP | Train SupCon Loss |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.05 | | | | | | |
+| 0.07 | | | | | | |
+| 0.1 | | | | | | |
+| 0.2 | | | | | | |
+
 ## 15. Phase 6：Explainability
 
 该阶段：

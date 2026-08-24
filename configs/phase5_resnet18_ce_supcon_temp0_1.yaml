@@ -1,0 +1,64 @@
+project:
+  name: VisionSearch-FG
+  phase: phase5_temperature_ablation
+  seed: 42
+
+experiment:
+  name: phase5_resnet18_ce_supcon_temp0_1
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 224
+  augmentation: rrc_hflip_colorjitter
+  num_workers: 2
+  train_split: train
+  val_split: train
+  train_ids_path: data/processed/splits/cub_train_ids_seed42.txt
+  val_ids_path: data/processed/splits/cub_val_ids_seed42.txt
+
+model:
+  backbone: resnet18
+  pretrained: true
+  freeze_backbone: false
+  fine_tune_mode: full
+  embedding_dim: 512
+  projection_head: mlp
+  projection_dim: 512
+  projection_hidden_dim: 512
+  num_classes: 200
+
+training:
+  epochs: 30
+  batch_size: 16
+  optimizer: adamw
+  learning_rate: 0.0001
+  backbone_learning_rate: 0.0001
+  classifier_learning_rate: 0.001
+  projection_learning_rate: 0.001
+  weight_decay: 0.0001
+  ce_weight: 1.0
+  supcon_weight: 0.1
+  supcon_feature: projection
+  temperature: 0.1
+  two_view: true
+  selection_metric: val_accuracy
+  early_stopping_patience: 5
+
+runtime:
+  max_train_batches:
+  max_val_batches:
+
+evaluation:
+  metrics:
+    - accuracy
+    - recall@1
+    - recall@5
+    - recall@10
+    - mAP
+    - storage
+    - search_time
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs
