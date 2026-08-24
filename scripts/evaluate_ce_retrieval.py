@@ -4,7 +4,9 @@ import argparse
 import csv
 import json
 import sys
+import time
 from pathlib import Path
+from statistics import mean
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -15,7 +17,11 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
-from visionsearch_fg.models import build_resnet18_classifier, build_swin_tiny_classifier
+from visionsearch_fg.models import (
+    build_contrastive_classifier,
+    build_resnet18_classifier,
+    build_swin_tiny_classifier,
+)
 from visionsearch_fg.retrieval import (
     cosine_similarity_matrix,
     euclidean_distance_matrix,
@@ -24,6 +30,8 @@ from visionsearch_fg.retrieval import (
     rank_gallery_for_queries,
 )
 from visionsearch_fg.utils import load_yaml_config
+
+FLOAT32_BYTES = 4
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,6 +44,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ids-path", type=Path, required=True)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     parser.add_argument("--metric", choices=["cosine", "euclidean"], default="cosine")
+    parser.add_argument("--feature", choices=["embedding", "projection"], default="embedding")
+    parser.add_argument("--latency-repeats", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/embeddings/ce_retrieval"))
@@ -70,12 +80,17 @@ def main() -> None:
         pin_memory=torch.cuda.is_available(),
     )
 
-    model = build_model(model_config=model_config).to(device)
+    model = build_model(model_config=model_config, feature=args.feature).to(device)
     checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=False)
     model.eval()
 
-    embeddings, records = extract_embeddings(model=model, dataloader=dataloader, device=device)
+    embeddings, records = extract_embeddings(
+        model=model,
+        dataloader=dataloader,
+        device=device,
+        feature=args.feature,
+    )
     labels = np.array([record["label"] for record in records], dtype=np.int64)
     metrics = evaluate_retrieval(
         embeddings=embeddings,
@@ -83,6 +98,12 @@ def main() -> None:
         recall_ks=(1, 5, 10),
         metric=args.metric,
     )
+    latency = benchmark_search(
+        embeddings=embeddings,
+        metric=args.metric,
+        repeats=args.latency_repeats,
+    )
+    storage_bytes = int(embeddings.shape[0] * embeddings.shape[1] * FLOAT32_BYTES)
 
     run_id = args.checkpoint.parent.name
     output_dir = args.output_dir / run_id / args.metric
@@ -108,9 +129,15 @@ def main() -> None:
         "split": args.split,
         "ids_path": str(args.ids_path),
         "backbone": model_config.get("backbone", "resnet18"),
+        "feature": args.feature,
         "metric": args.metric,
         "num_samples": len(records),
         "embedding_dim": int(embeddings.shape[1]),
+        "storage_bytes_float32": storage_bytes,
+        "storage_mib_float32": storage_bytes / (1024 * 1024),
+        "latency_repeats": args.latency_repeats,
+        "search_latency_ms_total": latency["search_latency_ms_total"],
+        "search_latency_ms_per_query": latency["search_latency_ms_per_query"],
         **metrics,
     }
     (output_dir / "summary.json").write_text(
@@ -127,6 +154,7 @@ def extract_embeddings(
     model: torch.nn.Module,
     dataloader: DataLoader,
     device: torch.device,
+    feature: str,
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     embeddings: list[np.ndarray] = []
     records: list[dict[str, Any]] = []
@@ -134,7 +162,9 @@ def extract_embeddings(
     for batch in tqdm(dataloader, desc="extract", leave=False):
         images = batch["image"].to(device)
         output = model(images)
-        embeddings.append(output.embedding.cpu().numpy())
+        if not hasattr(output, feature):
+            raise AttributeError(f"Model output does not contain feature: {feature}")
+        embeddings.append(getattr(output, feature).cpu().numpy())
 
         batch_size = len(batch["label"])
         for index in range(batch_size):
@@ -186,17 +216,55 @@ def build_top_results(
     return results
 
 
-def build_model(model_config: dict) -> torch.nn.Module:
+def benchmark_search(
+    embeddings: np.ndarray,
+    metric: str,
+    repeats: int,
+) -> dict[str, float]:
+    if repeats < 1:
+        raise ValueError("--latency-repeats must be greater than or equal to 1")
+
+    durations = []
+    for _ in range(repeats):
+        start = time.perf_counter()
+        if metric == "cosine":
+            score_matrix = cosine_similarity_matrix(embeddings)
+            rank_gallery_for_queries(score_matrix, exclude_self=True)
+        elif metric == "euclidean":
+            distance_matrix = euclidean_distance_matrix(embeddings)
+            rank_gallery_by_distance(distance_matrix, exclude_self=True)
+        else:
+            raise ValueError(f"Unsupported retrieval metric: {metric}")
+        durations.append((time.perf_counter() - start) * 1000)
+
+    total_latency_ms = mean(durations)
+    return {
+        "search_latency_ms_total": total_latency_ms,
+        "search_latency_ms_per_query": total_latency_ms / embeddings.shape[0],
+    }
+
+
+def build_model(model_config: dict, feature: str) -> torch.nn.Module:
     backbone = model_config.get("backbone", "resnet18")
     if backbone == "resnet18":
-        return build_resnet18_classifier(
+        classifier = build_resnet18_classifier(
             num_classes=model_config["num_classes"],
             pretrained=False,
             freeze_backbone=model_config.get("freeze_backbone", False),
             fine_tune_mode=model_config.get("fine_tune_mode"),
             trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
         )
+        if feature == "projection":
+            return build_contrastive_classifier(
+                classifier=classifier,
+                projection_head=model_config.get("projection_head", "mlp"),
+                projection_dim=model_config.get("projection_dim", 128),
+                projection_hidden_dim=model_config.get("projection_hidden_dim"),
+            )
+        return classifier
     if backbone in {"swin_tiny", "swin_t"}:
+        if feature == "projection":
+            raise ValueError("projection feature is currently supported for resnet18 only")
         return build_swin_tiny_classifier(
             num_classes=model_config["num_classes"],
             pretrained=False,

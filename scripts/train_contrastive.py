@@ -93,6 +93,7 @@ def main() -> None:
         "selection_metric",
         "val_accuracy" if ce_weight > 0.0 else "train_loss",
     )
+    supcon_feature = training_config.get("supcon_feature", "projection")
 
     if ce_weight < 0 or supcon_weight < 0:
         raise ValueError("ce_weight and supcon_weight must be non-negative")
@@ -100,6 +101,8 @@ def main() -> None:
         raise ValueError("At least one of ce_weight or supcon_weight must be positive")
     if supcon_weight > 0 and not two_view:
         raise ValueError("SupCon training requires two_view=true")
+    if supcon_feature not in {"projection", "embedding"}:
+        raise ValueError("supcon_feature must be one of: projection, embedding")
 
     train_loader = build_dataloader(
         root=data_config["root"],
@@ -157,11 +160,13 @@ def main() -> None:
         "batch_size": batch_size,
         "pretrained": pretrained,
         "fine_tune_mode": model_config.get("fine_tune_mode", "full"),
+        "projection_head": model_config.get("projection_head", "mlp"),
         "projection_dim": model_config.get("projection_dim", 128),
         "total_parameters": parameter_counts["total_parameters"],
         "trainable_parameters": parameter_counts["trainable_parameters"],
         "ce_weight": ce_weight,
         "supcon_weight": supcon_weight,
+        "supcon_feature": supcon_feature,
         "temperature": training_config.get("temperature", 0.07),
         "two_view": two_view,
         "selection_metric": selection_metric,
@@ -197,6 +202,7 @@ def main() -> None:
             device=device,
             ce_weight=ce_weight,
             supcon_weight=supcon_weight,
+            supcon_feature=supcon_feature,
             max_batches=max_train_batches,
         )
         val_stats = validate(
@@ -317,6 +323,7 @@ def build_model(model_config: dict, pretrained: bool) -> nn.Module:
     return build_contrastive_classifier(
         classifier=classifier,
         projection_dim=model_config.get("projection_dim", 128),
+        projection_head=model_config.get("projection_head", "mlp"),
         projection_hidden_dim=model_config.get("projection_hidden_dim"),
     )
 
@@ -330,6 +337,7 @@ def train_one_epoch_contrastive(
     device: torch.device,
     ce_weight: float,
     supcon_weight: float,
+    supcon_feature: str,
     max_batches: int | None,
 ) -> ContrastiveTrainStats:
     model.train()
@@ -362,8 +370,9 @@ def train_one_epoch_contrastive(
             if supcon_features is None:
                 raise ValueError("SupCon loss requires two views in the training batch")
             batch_size = labels.shape[0]
+            supcon_output = output.projection if supcon_feature == "projection" else output.embedding
             projections = torch.stack(
-                [output.projection[:batch_size], output.projection[batch_size:]],
+                [supcon_output[:batch_size], supcon_output[batch_size:]],
                 dim=1,
             )
             supcon_loss = supcon_criterion(projections, labels)

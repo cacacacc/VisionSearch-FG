@@ -647,6 +647,7 @@ Early Stopping: 5
 训练预算可比
 每个模型使用合理配置
 完整报告配置
+实验文档包含训练指令和评估指令
 ```
 
 Experiment 4.1 比较：
@@ -841,7 +842,7 @@ z = projection head output
 
 该实验直接对应 SimCLR / SupCon 类论文中的设计思想。
 
-### Experiment 5.4：Projection Dimension
+### Experiment 5.4：Embedding Dimension Ablation
 
 候选：
 
@@ -862,23 +863,40 @@ Projection Head
 64 / 128 / 256 / 512
 ```
 
+本实验中的 Embedding Dimension 指 retrieval evaluation 使用的 projection feature `z` 维度，而不是 backbone feature `h`。因此评估命令必须显式使用：
+
+```text
+--feature projection
+```
+
 统一：
 
 ```text
 Epoch = 30
 lambda = Phase 5.2 selected best value
 tau = fixed
+Projection Head = MLP
+SupCon feature = z
 ```
 
 评价：
 
 ```text
 Accuracy
-Recall@K
+Recall@1 / Recall@5 / Recall@10
 mAP
 Storage
 Search Time
 ```
+
+结果表：
+
+| Projection Dim | Accuracy | Recall@1 | Recall@5 | Recall@10 | mAP | Memory | Query Time |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | | | | | | | |
+| 128 | | | | | | | |
+| 256 | | | | | | | |
+| 512 | | | | | | | |
 
 ## 15. Phase 6：Explainability
 
