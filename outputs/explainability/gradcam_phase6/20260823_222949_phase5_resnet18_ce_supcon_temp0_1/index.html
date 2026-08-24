@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Grad-CAM Analysis</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #202124; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 16px; margin: 0 0 8px; }
+    p { margin: 4px 0; }
+    .images { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    img { width: 100%; height: auto; display: block; }
+    .note { color: #5f6368; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Grad-CAM Analysis</h1>
+  <div class="grid">
+    
+            <article class="card">
+              <h2>正确 | Image 4794</h2>
+              <p>True: 083.White_breasted_Kingfisher</p>
+              <p>Pred: 083.White_breasted_Kingfisher (1.000)</p>
+              <p>CAM target: 083.White_breasted_Kingfisher</p>
+              <div class="images">
+                <img src="images/001_correct_image4794_original.jpg" alt="original">
+                <img src="images/001_correct_image4794_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 5655</h2>
+              <p>True: 097.Orchard_Oriole</p>
+              <p>Pred: 097.Orchard_Oriole (1.000)</p>
+              <p>CAM target: 097.Orchard_Oriole</p>
+              <div class="images">
+                <img src="images/002_correct_image5655_original.jpg" alt="original">
+                <img src="images/002_correct_image5655_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 6985</h2>
+              <p>True: 120.Fox_Sparrow</p>
+              <p>Pred: 120.Fox_Sparrow (1.000)</p>
+              <p>CAM target: 120.Fox_Sparrow</p>
+              <div class="images">
+                <img src="images/003_correct_image6985_original.jpg" alt="original">
+                <img src="images/003_correct_image6985_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 937</h2>
+              <p>True: 017.Cardinal</p>
+              <p>Pred: 017.Cardinal (1.000)</p>
+              <p>CAM target: 017.Cardinal</p>
+              <div class="images">
+                <img src="images/004_correct_image937_original.jpg" alt="original">
+                <img src="images/004_correct_image937_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 3310</h2>
+              <p>True: 058.Pigeon_Guillemot</p>
+              <p>Pred: 058.Pigeon_Guillemot (1.000)</p>
+              <p>CAM target: 058.Pigeon_Guillemot</p>
+              <div class="images">
+                <img src="images/005_correct_image3310_original.jpg" alt="original">
+                <img src="images/005_correct_image3310_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 693</h2>
+              <p>True: 013.Bobolink</p>
+              <p>Pred: 013.Bobolink (1.000)</p>
+              <p>CAM target: 013.Bobolink</p>
+              <div class="images">
+                <img src="images/006_correct_image693_original.jpg" alt="original">
+                <img src="images/006_correct_image693_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 1975</h2>
+              <p>True: 035.Purple_Finch</p>
+              <p>Pred: 035.Purple_Finch (1.000)</p>
+              <p>CAM target: 035.Purple_Finch</p>
+              <div class="images">
+                <img src="images/007_correct_image1975_original.jpg" alt="original">
+                <img src="images/007_correct_image1975_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 5596</h2>
+              <p>True: 096.Hooded_Oriole</p>
+              <p>Pred: 096.Hooded_Oriole (1.000)</p>
+              <p>CAM target: 096.Hooded_Oriole</p>
+              <div class="images">
+                <img src="images/008_correct_image5596_original.jpg" alt="original">
+                <img src="images/008_correct_image5596_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 9607</h2>
+              <p>True: 164.Cerulean_Warbler</p>
+              <p>Pred: 164.Cerulean_Warbler (1.000)</p>
+              <p>CAM target: 164.Cerulean_Warbler</p>
+              <div class="images">
+                <img src="images/009_correct_image9607_original.jpg" alt="original">
+                <img src="images/009_correct_image9607_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 4475</h2>
+              <p>True: 077.Tropical_Kingbird</p>
+              <p>Pred: 077.Tropical_Kingbird (1.000)</p>
+              <p>CAM target: 077.Tropical_Kingbird</p>
+              <div class="images">
+                <img src="images/010_correct_image4475_original.jpg" alt="original">
+                <img src="images/010_correct_image4475_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 1899</h2>
+              <p>True: 034.Gray_crowned_Rosy_Finch</p>
+              <p>Pred: 034.Gray_crowned_Rosy_Finch (1.000)</p>
+              <p>CAM target: 034.Gray_crowned_Rosy_Finch</p>
+              <div class="images">
+                <img src="images/011_correct_image1899_original.jpg" alt="original">
+                <img src="images/011_correct_image1899_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 979</h2>
+              <p>True: 018.Spotted_Catbird</p>
+              <p>Pred: 018.Spotted_Catbird (1.000)</p>
+              <p>CAM target: 018.Spotted_Catbird</p>
+              <div class="images">
+                <img src="images/012_correct_image979_original.jpg" alt="original">
+                <img src="images/012_correct_image979_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 6373</h2>
+              <p>True: 109.American_Redstart</p>
+              <p>Pred: 021.Eastern_Towhee (0.996)</p>
+              <p>CAM target: 021.Eastern_Towhee</p>
+              <div class="images">
+                <img src="images/013_wrong_image6373_original.jpg" alt="original">
+                <img src="images/013_wrong_image6373_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 8406</h2>
+              <p>True: 144.Common_Tern</p>
+              <p>Pred: 147.Least_Tern (0.996)</p>
+              <p>CAM target: 147.Least_Tern</p>
+              <div class="images">
+                <img src="images/014_wrong_image8406_original.jpg" alt="original">
+                <img src="images/014_wrong_image8406_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 3121</h2>
+              <p>True: 054.Blue_Grosbeak</p>
+              <p>Pred: 014.Indigo_Bunting (0.994)</p>
+              <p>CAM target: 014.Indigo_Bunting</p>
+              <div class="images">
+                <img src="images/015_wrong_image3121_original.jpg" alt="original">
+                <img src="images/015_wrong_image3121_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 2939</h2>
+              <p>True: 051.Horned_Grebe</p>
+              <p>Pred: 050.Eared_Grebe (0.992)</p>
+              <p>CAM target: 050.Eared_Grebe</p>
+              <div class="images">
+                <img src="images/016_wrong_image2939_original.jpg" alt="original">
+                <img src="images/016_wrong_image2939_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 10785</h2>
+              <p>True: 184.Louisiana_Waterthrush</p>
+              <p>Pred: 183.Northern_Waterthrush (0.992)</p>
+              <p>CAM target: 183.Northern_Waterthrush</p>
+              <div class="images">
+                <img src="images/017_wrong_image10785_original.jpg" alt="original">
+                <img src="images/017_wrong_image10785_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 1354</h2>
+              <p>True: 025.Pelagic_Cormorant</p>
+              <p>Pred: 023.Brandt_Cormorant (0.989)</p>
+              <p>CAM target: 023.Brandt_Cormorant</p>
+              <div class="images">
+                <img src="images/018_wrong_image1354_original.jpg" alt="original">
+                <img src="images/018_wrong_image1354_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 8815</h2>
+              <p>True: 150.Sage_Thrasher</p>
+              <p>Pred: 183.Northern_Waterthrush (0.988)</p>
+              <p>CAM target: 183.Northern_Waterthrush</p>
+              <div class="images">
+                <img src="images/019_wrong_image8815_original.jpg" alt="original">
+                <img src="images/019_wrong_image8815_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 7652</h2>
+              <p>True: 131.Vesper_Sparrow</p>
+              <p>Pred: 076.Dark_eyed_Junco (0.985)</p>
+              <p>CAM target: 076.Dark_eyed_Junco</p>
+              <div class="images">
+                <img src="images/020_wrong_image7652_original.jpg" alt="original">
+                <img src="images/020_wrong_image7652_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 8107</h2>
+              <p>True: 139.Scarlet_Tanager</p>
+              <p>Pred: 140.Summer_Tanager (0.984)</p>
+              <p>CAM target: 140.Summer_Tanager</p>
+              <div class="images">
+                <img src="images/021_wrong_image8107_original.jpg" alt="original">
+                <img src="images/021_wrong_image8107_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 1369</h2>
+              <p>True: 025.Pelagic_Cormorant</p>
+              <p>Pred: 023.Brandt_Cormorant (0.975)</p>
+              <p>CAM target: 023.Brandt_Cormorant</p>
+              <div class="images">
+                <img src="images/022_wrong_image1369_original.jpg" alt="original">
+                <img src="images/022_wrong_image1369_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 3396</h2>
+              <p>True: 059.California_Gull</p>
+              <p>Pred: 066.Western_Gull (0.970)</p>
+              <p>CAM target: 066.Western_Gull</p>
+              <div class="images">
+                <img src="images/023_wrong_image3396_original.jpg" alt="original">
+                <img src="images/023_wrong_image3396_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 9783</h2>
+              <p>True: 167.Hooded_Warbler</p>
+              <p>Pred: 180.Wilson_Warbler (0.967)</p>
+              <p>CAM target: 180.Wilson_Warbler</p>
+              <div class="images">
+                <img src="images/024_wrong_image9783_original.jpg" alt="original">
+                <img src="images/024_wrong_image9783_gradcam.jpg" alt="gradcam">
+              </div>
+              <p class="note">人工标注：Head / Beak / Wing / Plumage / Background</p>
+            </article>
+            
+  </div>
+</body>
+</html>

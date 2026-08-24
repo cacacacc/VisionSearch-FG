@@ -966,6 +966,57 @@ T-SNE / UMAP
 错误分析
 ```
 
+### Experiment 6.1：Grad-CAM Analysis
+
+研究问题：
+
+```text
+ResNet 在做细粒度预测时关注的是鸟类判别区域，还是背景 shortcut？
+```
+
+比较：
+
+```text
+正确预测
+vs
+错误预测
+```
+
+观察区域：
+
+```text
+Head
+Beak
+Wing
+Plumage
+Background
+```
+
+协议：
+
+```text
+Training Epoch = 0
+Split = validation
+Target layer = ResNet-18 layer4[-1]
+Target class = predicted class
+```
+
+优先分析模型：
+
+```text
+CE-only ResNet
+CE + SupCon tau=0.1
+CE + SupCon tau=0.2
+```
+
+输出：
+
+```text
+Grad-CAM overlay images
+HTML report
+CSV manual annotation table
+```
+
 T-SNE / UMAP 建议从 validation 或 test 中采样：
 
 ```text
