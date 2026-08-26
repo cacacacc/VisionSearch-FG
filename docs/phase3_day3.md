@@ -44,6 +44,16 @@ outputs/experiments/retrieval_qualitative/20260822_144519_ablation_resnet18_full
 
 本次已生成 16 个案例：Top-1 正确、Top-1 错但 Top-5 有同类、Top-5 错但 Top-10 有同类、Top-10 完全失败四组各 4 个。
 
+补充：Phase 4.2 的 Swin-Tiny backbone retrieval qualitative report 也已生成，路径为：
+
+```text
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_report.html
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_cases.json
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_cases.csv
+```
+
+Swin-Tiny 报告同样包含 16 个案例，四类各 4 个。它主要用于和 ResNet 报告对比，判断更强 backbone 是否减少背景干扰、姿态混淆或局部纹理混淆。
+
 ## 分析规则
 
 同类别结果用于判断 embedding 是否形成类别簇。外观相似但类别不同通常说明 CE feature 捕捉了整体颜色、体型或纹理，但还不够细粒度。背景相似导致错误说明模型可能过度依赖非鸟体区域。姿态相似导致错误说明模型对 pose invariance 不够稳定。局部特征相似用于观察模型是否关注了头部、喙、翅膀、腹部颜色等真正有判别力的细节。

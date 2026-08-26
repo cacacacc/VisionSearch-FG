@@ -181,9 +181,9 @@ outputs/explainability/gradcam_phase6/<run_id>/
 
 | Model | Scanned Images | Scanned Accuracy | Correct Samples | Wrong Samples | HTML Report | Manual Annotation |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| CE-only ResNet | 1200 | 67.17% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_084541_phase5_resnet18_ce_only/index.html` | 待人工标注 |
-| CE + SupCon tau=0.1 | 1200 | 68.00% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_222949_phase5_resnet18_ce_supcon_temp0_1/index.html` | 待人工标注 |
-| CE + SupCon tau=0.2 | 1200 | 66.75% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_222957_phase5_resnet18_ce_supcon_temp0_2/index.html` | 待人工标注 |
+| CE-only ResNet | 1200 | 67.17% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_084541_phase5_resnet18_ce_only/index.html` | 已标注 24/24 |
+| CE + SupCon tau=0.1 | 1200 | 68.00% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_222949_phase5_resnet18_ce_supcon_temp0_1/index.html` | 已标注 24/24 |
+| CE + SupCon tau=0.2 | 1200 | 66.75% | 12 | 12 | `outputs/explainability/gradcam_phase6/20260823_222957_phase5_resnet18_ce_supcon_temp0_2/index.html` | 已标注 24/24 |
 
 已生成文件：
 
@@ -195,7 +195,17 @@ outputs/explainability/gradcam_phase6/<run_id>/
 
 ## 初步视觉观察
 
-当前已完成 Grad-CAM 图像生成，但 `gradcam_records.csv` 中的人工标注字段仍为空。因此下面是少量样本抽查得到的初步观察，不作为最终统计结论。
+三组模型的 `gradcam_records.csv` 均已完成 24/24 人工标注。下面统计每组模型在 Head / Beak / Wing / Plumage / Background 上的 Grad-CAM 覆盖情况。
+
+| Model | Head yes/partial/no | Beak yes/partial/no | Wing yes/partial/no | Plumage yes/partial/no | Background yes/partial/no |
+| --- | --- | --- | --- | --- | --- |
+| CE-only ResNet | 13 / 11 / 0 | 2 / 14 / 8 | 5 / 17 / 2 | 23 / 1 / 0 | 6 / 17 / 1 |
+| CE + SupCon tau=0.1 | 10 / 14 / 0 | 1 / 14 / 9 | 4 / 19 / 1 | 24 / 0 / 0 | 8 / 16 / 0 |
+| CE + SupCon tau=0.2 | 12 / 12 / 0 | 1 / 14 / 9 | 5 / 19 / 0 | 24 / 0 / 0 | 7 / 17 / 0 |
+
+三组模型的 Grad-CAM 都主要覆盖鸟体羽毛区域，plumage 在 SupCon 两组中均为 24/24 `yes`。Head 经常被覆盖，但大量是 `partial`，说明头部证据并不总是主导。Beak 是最弱的局部线索，三组都只有 1-2 个样本达到 `yes`，这与 retrieval qualitative analysis 中“喙部线索混淆明显”的观察一致。Background 在三组中都有较高的 `partial` 或 `yes` 覆盖，说明背景并非唯一错误来源，但在多数样本中会参与模型证据；CE + SupCon 并没有在这批样本上明显消除背景参与。
+
+下面保留少量样本观察，作为理解统计结果的例子。
 
 抽查样本：
 
@@ -251,7 +261,7 @@ CAM 是否落在背景、树枝、水面、天空、姿态轮廓或非判别性�
 三组模型均已在 validation split 上生成 12 个高置信正确样本和 12 个高置信错误样本的 Grad-CAM。
 ```
 
-但还不能给出最终的 Head / Beak / Wing / Plumage / Background 统计结论，因为人工标注尚未完成。
+三组模型已经可以给出 Head / Beak / Wing / Plumage / Background 的人工统计结论，并可进行跨模型解释性对比。当前结果显示，SupCon joint training 没有明显改变“主要关注 plumage、较少明确关注 beak、背景经常参与”的总体证据模式；tau=0.2 的 head 覆盖略高于 tau=0.1，但差异仍需要结合更多样本验证。
 
 最终结论应回答：
 
@@ -259,7 +269,7 @@ CAM 是否落在背景、树枝、水面、天空、姿态轮廓或非判别性�
 模型的预测证据是否与鸟类细粒度判别区域一致？
 ```
 
-后续人工标注完成后，可能形成以下结论：
+基于当前人工标注，后续写论文或报告时可以围绕以下候选结论展开：
 
 1. 模型主要关注鸟体局部判别区域，错误来自类别间细粒度相似性。
 2. 模型在错误样本上明显依赖背景 shortcut，需要引入 foreground crop、bbox、attention 或 stronger augmentation。

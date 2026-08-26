@@ -25,6 +25,23 @@ cd D:\code\VisionSearch-FG
 outputs/experiments/retrieval_qualitative/20260822_144519_ablation_resnet18_fullft_aug_hflip/retrieval_qualitative_report.html
 ```
 
+Swin-Tiny backbone retrieval qualitative report 也已生成，输入为 Phase 4.2 的 Swin-Tiny validation embedding：
+
+```powershell
+cd D:\code\VisionSearch-FG
+.\.venv\Scripts\python.exe scripts\generate_retrieval_qualitative_report.py `
+  --embeddings outputs\embeddings\backbone_retrieval\20260823_012929_baseline_swin_tiny_protocol\cosine\embeddings.npy `
+  --records outputs\embeddings\backbone_retrieval\20260823_012929_baseline_swin_tiny_protocol\cosine\records.csv `
+  --cases-per-group 4 `
+  --output-dir outputs\experiments\retrieval_qualitative\20260823_012929_baseline_swin_tiny_protocol
+```
+
+```text
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_report.html
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_cases.json
+outputs/experiments/retrieval_qualitative/20260823_012929_baseline_swin_tiny_protocol/retrieval_qualitative_cases.csv
+```
+
 本次已生成 16 个案例，四组各 4 个：
 
 ```text
@@ -33,6 +50,16 @@ Top-1 错误，但 Top-5 有同类：4
 Top-5 错误，但 Top-10 有同类：4
 Top-10 完全失败：4
 ```
+
+Swin-Tiny 报告同样生成 16 个案例，四组各 4 个。后续人工分析时，应和 ResNet 报告对照观察：Swin 是否减少背景相似导致的错误，是否更稳定地处理姿态变化，是否仍然混淆局部纹理相近的鸟类类别。
+
+ResNet 报告的第一批人工标注已记录在：
+
+```text
+docs/experiments/2026-08-26_resnet-retrieval-qualitative-human-notes.md
+```
+
+当前覆盖 12 个 ResNet 案例：`top1_correct` 组的 Query #6、#15、#19、#24，`top1_wrong_top5_hit` 组的 Query #1、#7、#13、#18，以及 `top5_wrong_top10_hit` 组的 Query #0、#10、#42、#48。初步结论是：ResNet CE embedding 的错误 top-k 明显受到整体颜色、体型、背景、姿态和局部部位混淆影响，其中喙、头部、眼睛、腹部颜色和羽毛纹理是最常见的细粒度失败点。
 
 ## Analysis Checklist
 
@@ -46,4 +73,4 @@ Top-10 完全失败：4
 
 ## Decision
 
-已生成 HTML 报告，下一步需要人工逐例查看并填写视觉失败模式。该分析将决定后续 representation 改进方向：如果背景干扰强，优先考虑 foreground/crop/attention；如果局部特征混淆强，优先考虑更高分辨率、part-aware feature 或 SupCon；如果同类经常在 Top-5/Top-10 但不在 Top-1，说明需要增强 intra-class compactness 和 inter-class margin。
+已生成 ResNet-18 和 Swin-Tiny 两份 HTML 报告，并开始记录人工视觉失败模式。该分析将决定后续 representation 改进方向：如果背景干扰强，优先考虑 foreground/crop/attention；如果局部特征混淆强，优先考虑更高分辨率、part-aware feature 或 SupCon；如果同类经常在 Top-5/Top-10 但不在 Top-1，说明需要增强 intra-class compactness 和 inter-class margin。
