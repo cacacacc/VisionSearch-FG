@@ -13,10 +13,10 @@
     "target_class": "170.Mourning_Warbler",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\001_correct_image9994_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\001_correct_image9994_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 覆盖头部、胸腹黄色羽毛和翼部，鸟主体证据明确；枝条和背景色块有轻度参与。"
   },
   {
     "image_id": 11738,
@@ -32,10 +32,10 @@
     "target_class": "200.Common_Yellowthroat",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\002_correct_image11738_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\002_correct_image11738_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "attention 覆盖黑色面罩、黄色喉胸和尾部，局部判别线索较清楚；草茎和背景红色区域也明显参与。"
   },
   {
     "image_id": 979,
@@ -51,10 +51,10 @@
     "target_class": "018.Spotted_Catbird",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\003_correct_image979_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\003_correct_image979_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 主要覆盖胸腹鳞状羽毛和体侧，头眼区域部分覆盖；暗背景和枝条有轻度参与。"
   },
   {
     "image_id": 4424,
@@ -70,10 +70,10 @@
     "target_class": "076.Dark_eyed_Junco",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\004_correct_image4424_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\004_correct_image4424_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "attention 覆盖头胸和腹部羽毛，但松针、枝条和绿色背景响应较强，主体与背景证据混合。"
   },
   {
     "image_id": 418,
@@ -89,10 +89,10 @@
     "target_class": "008.Rhinoceros_Auklet",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\005_correct_image418_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\005_correct_image418_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "attention 覆盖头部、喙、翼部白斑和腿部，同时水面背景响应明显，模型利用了鸟体与水面场景共同证据。"
   },
   {
     "image_id": 11760,
@@ -108,10 +108,10 @@
     "target_class": "200.Common_Yellowthroat",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\006_correct_image11760_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\006_correct_image11760_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "attention 覆盖黄色胸腹和体侧，黑色面罩部分覆盖；草茎和穗状植物背景明显参与。"
   },
   {
     "image_id": 1554,
@@ -127,10 +127,10 @@
     "target_class": "028.Brown_Creeper",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\007_correct_image1554_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\007_correct_image1554_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "partial",
+    "manual_focus_background": "yes",
+    "manual_notes": "attention 在鸟体和树干纹理之间混合，鸟主体只被部分覆盖，树皮背景是很强的响应区域。"
   },
   {
     "image_id": 4427,
@@ -146,10 +146,10 @@
     "target_class": "076.Dark_eyed_Junco",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\008_correct_image4427_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\008_correct_image4427_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 集中在胸腹和体侧羽毛，头部和喙覆盖较弱；虚化背景有轻度响应。"
   },
   {
     "image_id": 4803,
@@ -165,10 +165,10 @@
     "target_class": "083.White_breasted_Kingfisher",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\009_correct_image4803_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\009_correct_image4803_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 覆盖红褐色头部、长喙、蓝色翼尾和胸腹区域；枝条及背景色块有轻度参与。"
   },
   {
     "image_id": 3310,
@@ -184,10 +184,10 @@
     "target_class": "058.Pigeon_Guillemot",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\010_correct_image3310_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\010_correct_image3310_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 覆盖展开翼部白斑、红色腿部和黑色鸟体，水面有一定响应但主体证据占主导。"
   },
   {
     "image_id": 939,
@@ -203,10 +203,10 @@
     "target_class": "017.Cardinal",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\011_correct_image939_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\011_correct_image939_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 覆盖冠羽、脸部黑色区域、红色胸腹和翼部；笼网背景有轻度参与。"
   },
   {
     "image_id": 11244,
@@ -222,10 +222,10 @@
     "target_class": "191.Red_headed_Woodpecker",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\012_correct_image11244_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\012_correct_image11244_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "attention 覆盖红色头部、喙部和黑白体羽，树干枝条有轻度响应。"
   },
   {
     "image_id": 7652,
@@ -241,10 +241,10 @@
     "target_class": "076.Dark_eyed_Junco",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\013_wrong_image7652_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\013_wrong_image7652_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖灰色鸟体和腹部，但针叶、雪地和背景边缘响应也明显，环境上下文参与较强。"
   },
   {
     "image_id": 3429,
@@ -260,10 +260,10 @@
     "target_class": "062.Herring_Gull",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\014_wrong_image3429_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\014_wrong_image3429_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖鸥类头胸和翼部，但水面、岩石边缘和下方背景响应明显，类别混淆伴随场景证据。"
   },
   {
     "image_id": 6373,
@@ -279,10 +279,10 @@
     "target_class": "021.Eastern_Towhee",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\015_wrong_image6373_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\015_wrong_image6373_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "错误样本中 attention 覆盖橙黑色鸟体和腹部，枝条遮挡区域有轻度响应，局部体色是主要混淆线索。"
   },
   {
     "image_id": 812,
@@ -298,10 +298,10 @@
     "target_class": "014.Indigo_Bunting",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\016_wrong_image812_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\016_wrong_image812_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖蓝色鸟体，但枝条、叶片和遮挡背景大量参与，主体边界与背景证据混合。"
   },
   {
     "image_id": 6213,
@@ -317,10 +317,10 @@
     "target_class": "029.American_Crow",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\017_wrong_image6213_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\017_wrong_image6213_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "错误样本中 attention 覆盖乌鸦主体和深色羽毛，木桩及周围背景有轻度响应，主要混淆来自相近黑色鸟体外观。"
   },
   {
     "image_id": 9545,
@@ -336,10 +336,10 @@
     "target_class": "174.Palm_Warbler",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\018_wrong_image9545_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\018_wrong_image9545_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖头部眉纹、胸腹纵纹和体侧，同时树干、枝条和绿色背景响应强，细节与背景共同参与。"
   },
   {
     "image_id": 8449,
@@ -355,10 +355,10 @@
     "target_class": "146.Forsters_Tern",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\019_wrong_image8449_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\019_wrong_image8449_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖黑色头顶、红色喙、胸腹和翼部轮廓，同时岩石和水面背景响应明显，相近燕鸥外观与场景共同导致混淆。"
   },
   {
     "image_id": 10785,
@@ -374,10 +374,10 @@
     "target_class": "183.Northern_Waterthrush",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\020_wrong_image10785_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\020_wrong_image10785_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "partial",
+    "manual_notes": "错误样本中 attention 主要覆盖胸腹斑纹和体侧，头部局部覆盖；草地和木头边缘有轻度参与。"
   },
   {
     "image_id": 9358,
@@ -393,10 +393,10 @@
     "target_class": "014.Indigo_Bunting",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\021_wrong_image9358_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\021_wrong_image9358_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "partial",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 只部分覆盖蓝黑色鸟体，大面积落在树干、枝条和背景色块上，背景参与较强。"
   },
   {
     "image_id": 6243,
@@ -412,10 +412,10 @@
     "target_class": "029.American_Crow",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\022_wrong_image6243_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\022_wrong_image6243_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖黑色鸟体、头颈和胸部，但地面、落叶和后方植被响应明显，背景上下文参与较强。"
   },
   {
     "image_id": 3824,
@@ -431,10 +431,10 @@
     "target_class": "059.California_Gull",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\023_wrong_image3824_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\023_wrong_image3824_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "partial",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖白色头胸和灰色翼部，但沙地背景和右侧区域响应明显，鸥类细粒度差异被背景弱化。"
   },
   {
     "image_id": 7977,
@@ -450,9 +450,9 @@
     "target_class": "137.Cliff_Swallow",
     "original_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\024_wrong_image7977_original.jpg",
     "attention_path": "outputs\\explainability\\swin_attention_phase6\\20260823_001810_baseline_swin_tiny_protocol\\images\\024_wrong_image7977_attention.jpg",
-    "manual_focus_local_detail": "",
-    "manual_focus_bird_body": "",
-    "manual_focus_background": "",
-    "manual_notes": ""
+    "manual_focus_local_detail": "yes",
+    "manual_focus_bird_body": "yes",
+    "manual_focus_background": "yes",
+    "manual_notes": "错误样本中 attention 覆盖头部、喉部橙色区域和长翼尾，同时天空/虚化背景响应很强，燕类姿态和场景共同参与预测。"
   }
 ]

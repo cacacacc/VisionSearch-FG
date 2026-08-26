@@ -143,7 +143,7 @@ outputs/explainability/swin_attention_phase6/<run_id>/
 
 | Model | Scanned Images | Scanned Accuracy | Correct Samples | Wrong Samples | HTML Report | Manual Annotation |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
-| Swin-Tiny | 1200 | 75.50% | 12 | 12 | `outputs/explainability/swin_attention_phase6/20260823_001810_baseline_swin_tiny_protocol/index.html` | 待人工标注 |
+| Swin-Tiny | 1200 | 75.50% | 12 | 12 | `outputs/explainability/swin_attention_phase6/20260823_001810_baseline_swin_tiny_protocol/index.html` | 已标注 24/24 |
 
 已生成文件：
 
@@ -167,7 +167,13 @@ visualization_type = gradient_weighted_swin_feature_map
 
 ## 初步视觉观察
 
-当前已完成 Swin attention-style visualization 图像生成，但 `attention_records.csv` 中的人工标注字段仍为空。因此下面是少量样本抽查得到的初步观察，不作为最终统计结论。
+当前已完成 Swin attention-style visualization 图像生成，并已对 `attention_records.csv` 中的 24 个样本完成 24/24 人工标注。标注口径为：`yes` 表示 attention 明显覆盖该区域，`partial` 表示弱覆盖或局部覆盖，`no` 表示基本不是主要证据来源。
+
+| Model | Local Detail yes/partial/no | Bird Body yes/partial/no | Background yes/partial/no |
+| --- | --- | --- | --- |
+| Swin-Tiny | 10 / 14 / 0 | 22 / 2 / 0 | 14 / 10 / 0 |
+
+统计结果说明，Swin-Tiny 的 attention-style map 几乎总能覆盖鸟主体，其中 22/24 为 `bird_body=yes`，但它也频繁吸收背景上下文，`background=yes` 达到 14/24。局部细节覆盖为 10/24 `yes` 和 14/24 `partial`，说明 Swin 并不是只依赖单个细粒度部位，而更倾向于把鸟体整体、局部纹理和周围场景一起纳入视觉证据。
 
 抽查样本：
 
@@ -190,8 +196,8 @@ Swin 的可视化区域通常覆盖较大范围的鸟主体，同时也会吸收
 
 | Backbone | Visualization | Correct Focus Pattern | Wrong Focus Pattern | Background Shortcut? | 结论 |
 | --- | --- | --- | --- | --- | --- |
-| ResNet-18 | Grad-CAM | 待人工标注 | 待人工标注 | 待判断 | |
-| Swin-Tiny | Attention-style map | 待人工标注 | 待人工标注 | 待判断 | |
+| ResNet-18 | Grad-CAM | 主要覆盖 plumage，head 经常为 partial，beak 最弱 | 错误样本仍多覆盖鸟体，但会混入枝条、水面、草丛等上下文 | 存在背景参与，但不是唯一错误来源 | 细粒度局部线索不足，尤其是 beak。 |
+| Swin-Tiny | Attention-style map | 几乎稳定覆盖鸟主体，同时覆盖较大范围的局部纹理和颜色区域 | 错误样本也通常覆盖鸟体，但背景、遮挡物和姿态轮廓参与更明显 | 存在较强背景参与，14/24 为 background=yes | Swin 更偏全局证据整合，但更强 backbone 没有自动消除背景 shortcut。 |
 
 重点回答：
 
