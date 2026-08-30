@@ -1,0 +1,10 @@
+{
+  "num_scanned": 1200,
+  "num_correct": 960,
+  "num_wrong": 240,
+  "accuracy": 0.8,
+  "num_selected": 24,
+  "num_selected_correct": 12,
+  "num_selected_wrong": 12,
+  "visualization_type": "gradient_weighted_swin_feature_map"
+}

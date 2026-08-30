@@ -1,0 +1,63 @@
+{
+  "num_records": 24,
+  "beak_num_eligible": 24,
+  "beak_peak_hit_rate": 0.125,
+  "beak_mean_peak_distance_px": 82.64120474216831,
+  "beak_mean_heat_mass": 0.0460022251104819,
+  "eye_num_eligible": 24,
+  "eye_peak_hit_rate": 0.041666666666666664,
+  "eye_mean_peak_distance_px": 77.27537437583955,
+  "eye_mean_heat_mass": 0.04163272808982222,
+  "head_num_eligible": 24,
+  "head_peak_hit_rate": 0.25,
+  "head_mean_peak_distance_px": 59.13913393624194,
+  "head_mean_heat_mass": 0.11490112499282357,
+  "wing_num_eligible": 23,
+  "wing_peak_hit_rate": 0.17391304347826086,
+  "wing_mean_peak_distance_px": 55.08137272738898,
+  "wing_mean_heat_mass": 0.05092892002561213,
+  "body_num_eligible": 24,
+  "body_peak_hit_rate": 0.4583333333333333,
+  "body_mean_peak_distance_px": 33.377142181032,
+  "body_mean_heat_mass": 0.18225869631291094,
+  "target_num_eligible": 24,
+  "target_peak_hit_rate": 0.2916666666666667,
+  "target_mean_peak_distance_px": 46.04890257420058,
+  "records": "outputs\\explainability\\swin_attention_paired_part_alignment_source\\20260823_012929_baseline_swin_tiny_protocol\\attention_records.csv",
+  "config": "configs\\baseline_swin_tiny_protocol.yaml",
+  "cub_root": "data\\raw\\CUB_200_2011",
+  "image_size": 224,
+  "crop_mode": "none",
+  "bbox_margin": 0.0,
+  "radius_pixels": 24.0,
+  "part_groups": {
+    "beak": [
+      "beak"
+    ],
+    "eye": [
+      "left eye",
+      "right eye"
+    ],
+    "head": [
+      "beak",
+      "crown",
+      "forehead",
+      "left eye",
+      "right eye",
+      "nape",
+      "throat"
+    ],
+    "wing": [
+      "left wing",
+      "right wing"
+    ],
+    "body": [
+      "back",
+      "belly",
+      "breast",
+      "left wing",
+      "right wing",
+      "tail"
+    ]
+  }
+}

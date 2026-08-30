@@ -111,6 +111,96 @@ cd D:\code\VisionSearch-FG
   --output-dir outputs\explainability\part_alignment
 ```
 
+### 当前结果
+
+本轮已经完成原图 Swin 和 BBox crop Swin 的 part alignment 初步评估。注意：两组 explainability report 都是各自重新选择 `12 correct + 12 wrong` 样本，因此当前结果不是严格同一批 image_id 的 paired comparison，只能作为方向性证据。
+
+| Method | Crop Mode | Samples | Beak Hit | Eye Hit | Head Hit | Wing Hit | Body Hit | Target Hit | Target Distance |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Swin-Tiny Original | none | 24 | 12.50% | 4.17% | 25.00% | 17.39% | 45.83% | 29.17% | 46.05 px |
+| Swin-Tiny BBox Crop | bbox, margin=0.15 | 24 | 0.00% | 4.35% | 8.33% | 12.50% | 29.17% | 16.67% | 54.30 px |
+
+按预测正确与错误拆分后：
+
+| Method | Group | Beak Hit | Eye Hit | Head Hit | Wing Hit | Body Hit | Target Hit | Target Distance |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Swin-Tiny Original | Correct | 16.67% | 0.00% | 33.33% | 25.00% | 58.33% | 41.67% | 39.94 px |
+| Swin-Tiny Original | Wrong | 8.33% | 8.33% | 16.67% | 8.33% | 33.33% | 16.67% | 52.16 px |
+| Swin-Tiny BBox Crop | Correct | 0.00% | 8.33% | 16.67% | 8.33% | 16.67% | 16.67% | 54.55 px |
+| Swin-Tiny BBox Crop | Wrong | 0.00% | 0.00% | 0.00% | 16.67% | 41.67% | 16.67% | 54.04 px |
+
+初步结论：
+
+```text
+1. 原图 Swin 的正确样本比错误样本更接近关键 parts：
+   Target Hit 从 16.67% 提升到 41.67%，Target Distance 从 52.16 px 降到 39.94 px。
+
+2. BBox crop 虽然显著提升分类和 retrieval 数值，但当前 heatmap peak 并没有更稳定落在 beak / eye / wing 附近。
+
+3. 这说明 BBox crop 的收益更可能来自“减少背景干扰、放大鸟主体”，而不一定来自模型已经学会稳定关注喙、眼睛、翼部等细粒度 part。
+
+4. 因此 Part-aware / Local Feature Learning 仍然有必要：BBox crop 提升了输入质量，但没有解决 discriminative local region selection 的问题。
+```
+
+当前输出文件：
+
+```text
+outputs/explainability/part_alignment/20260823_012929_baseline_swin_tiny_protocol/summary.json
+outputs/explainability/part_alignment/20260830_141148_foreground_swin_tiny_bbox224/summary.json
+```
+
+后续如果要做更严格分析，应固定同一批 image_id，例如从 validation split 中指定同一组正确/错误样本，再分别生成原图和 bbox crop heatmap。这样才能回答 BBox crop 是否真的改善 part alignment。
+
+### Paired comparison 结果
+
+为避免不同样本选择造成偏差，后续补充了严格的 paired comparison：固定同一批 24 个 validation image_id，同时对原图 Swin 和 BBox crop Swin 生成 heatmap 并计算 part alignment。
+
+```text
+same_set = True
+num_images = 24
+original correct / wrong = 12 / 12
+bbox correct / wrong = 15 / 9
+```
+
+paired 输出文件：
+
+```text
+outputs/explainability/part_alignment_paired/20260823_012929_baseline_swin_tiny_protocol/summary.json
+outputs/explainability/part_alignment_paired/20260830_141148_foreground_swin_tiny_bbox224/summary.json
+```
+
+整体结果：
+
+| Method | Samples | Beak Hit | Eye Hit | Head Hit | Wing Hit | Body Hit | Target Hit | Target Distance |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Swin-Tiny Original | 24 | 12.50% | 4.17% | 25.00% | 17.39% | 45.83% | 29.17% | 46.05 px |
+| Swin-Tiny BBox Crop | 24 | 12.50% | 0.00% | 16.67% | 17.39% | 33.33% | 29.17% | 44.82 px |
+
+逐图距离差异统计，`mean_delta = BBox distance - Original distance`：
+
+| Part Group | Eligible Images | BBox 更近的图片数 | Mean Delta |
+| --- | ---: | ---: | ---: |
+| Beak | 24 | 12 | +8.90 px |
+| Eye | 24 | 11 | +10.50 px |
+| Head | 24 | 11 | +4.39 px |
+| Wing | 23 | 9 | +7.55 px |
+| Body | 24 | 10 | +3.70 px |
+| Target = beak/eye/wing | 24 | 10 | -1.23 px |
+
+paired 结论：
+
+```text
+1. BBox crop 让同一批图的预测正确数从 12/24 提升到 15/24，说明 foreground crop 确实改善分类判断。
+
+2. BBox crop 没有显著提高 beak / eye / head / wing / body 的 peak hit rate。
+
+3. Target = beak/eye/wing 的 hit rate 两者相同，都是 29.17%；BBox 的平均 target distance 略低 1.23 px，但幅度很小。
+
+4. 因此，BBox crop 的主要收益仍应解释为减少背景干扰和放大鸟主体，而不是已经解决了稳定 part localization。
+
+5. 这进一步支持后续做 Local Token Pooling 或 Part-aware Training：现有强结果仍没有稳定使用喙、眼睛、翼部等局部判别区域。
+```
+
 ## 实验 8.2：Local Token Pooling Retrieval
 
 ### 研究问题

@@ -43,7 +43,7 @@ def stratified_train_val_split(
 def read_image_ids(path: str | Path) -> list[int]:
     image_ids: list[int] = []
     for line in Path(path).read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
+        stripped = line.strip().lstrip("\ufeff")
         if stripped:
             image_ids.append(int(stripped))
     return image_ids

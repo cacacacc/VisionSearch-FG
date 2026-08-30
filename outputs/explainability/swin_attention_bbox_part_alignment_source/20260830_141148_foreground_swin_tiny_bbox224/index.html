@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Swin Attention Visualization</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #202124; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 16px; margin: 0 0 8px; }
+    p { margin: 4px 0; }
+    .images { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    img { width: 100%; height: auto; display: block; }
+    .note { color: #5f6368; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Swin Attention Visualization</h1>
+  <p>Visualization type: gradient-weighted final-stage Swin feature map.</p>
+  <div class="grid">
+    
+            <article class="card">
+              <h2>正确 | Image 11181</h2>
+              <p>True: 190.Red_cockaded_Woodpecker</p>
+              <p>Pred: 190.Red_cockaded_Woodpecker (1.000)</p>
+              <p>Visualization target: 190.Red_cockaded_Woodpecker</p>
+              <div class="images">
+                <img src="images/001_correct_image11181_original.jpg" alt="original">
+                <img src="images/001_correct_image11181_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 10954</h2>
+              <p>True: 186.Cedar_Waxwing</p>
+              <p>Pred: 186.Cedar_Waxwing (1.000)</p>
+              <p>Visualization target: 186.Cedar_Waxwing</p>
+              <div class="images">
+                <img src="images/002_correct_image10954_original.jpg" alt="original">
+                <img src="images/002_correct_image10954_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 870</h2>
+              <p>True: 016.Painted_Bunting</p>
+              <p>Pred: 016.Painted_Bunting (1.000)</p>
+              <p>Visualization target: 016.Painted_Bunting</p>
+              <div class="images">
+                <img src="images/003_correct_image870_original.jpg" alt="original">
+                <img src="images/003_correct_image870_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 7231</h2>
+              <p>True: 124.Le_Conte_Sparrow</p>
+              <p>Pred: 124.Le_Conte_Sparrow (1.000)</p>
+              <p>Visualization target: 124.Le_Conte_Sparrow</p>
+              <div class="images">
+                <img src="images/004_correct_image7231_original.jpg" alt="original">
+                <img src="images/004_correct_image7231_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 1113</h2>
+              <p>True: 020.Yellow_breasted_Chat</p>
+              <p>Pred: 020.Yellow_breasted_Chat (1.000)</p>
+              <p>Visualization target: 020.Yellow_breasted_Chat</p>
+              <div class="images">
+                <img src="images/005_correct_image1113_original.jpg" alt="original">
+                <img src="images/005_correct_image1113_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 4674</h2>
+              <p>True: 081.Pied_Kingfisher</p>
+              <p>Pred: 081.Pied_Kingfisher (1.000)</p>
+              <p>Visualization target: 081.Pied_Kingfisher</p>
+              <div class="images">
+                <img src="images/006_correct_image4674_original.jpg" alt="original">
+                <img src="images/006_correct_image4674_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 979</h2>
+              <p>True: 018.Spotted_Catbird</p>
+              <p>Pred: 018.Spotted_Catbird (1.000)</p>
+              <p>Visualization target: 018.Spotted_Catbird</p>
+              <div class="images">
+                <img src="images/007_correct_image979_original.jpg" alt="original">
+                <img src="images/007_correct_image979_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 875</h2>
+              <p>True: 016.Painted_Bunting</p>
+              <p>Pred: 016.Painted_Bunting (1.000)</p>
+              <p>Visualization target: 016.Painted_Bunting</p>
+              <div class="images">
+                <img src="images/008_correct_image875_original.jpg" alt="original">
+                <img src="images/008_correct_image875_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 5142</h2>
+              <p>True: 088.Western_Meadowlark</p>
+              <p>Pred: 088.Western_Meadowlark (1.000)</p>
+              <p>Visualization target: 088.Western_Meadowlark</p>
+              <div class="images">
+                <img src="images/009_correct_image5142_original.jpg" alt="original">
+                <img src="images/009_correct_image5142_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 11120</h2>
+              <p>True: 189.Red_bellied_Woodpecker</p>
+              <p>Pred: 189.Red_bellied_Woodpecker (1.000)</p>
+              <p>Visualization target: 189.Red_bellied_Woodpecker</p>
+              <div class="images">
+                <img src="images/010_correct_image11120_original.jpg" alt="original">
+                <img src="images/010_correct_image11120_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 11242</h2>
+              <p>True: 191.Red_headed_Woodpecker</p>
+              <p>Pred: 191.Red_headed_Woodpecker (1.000)</p>
+              <p>Visualization target: 191.Red_headed_Woodpecker</p>
+              <div class="images">
+                <img src="images/011_correct_image11242_original.jpg" alt="original">
+                <img src="images/011_correct_image11242_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>正确 | Image 3845</h2>
+              <p>True: 067.Anna_Hummingbird</p>
+              <p>Pred: 067.Anna_Hummingbird (1.000)</p>
+              <p>Visualization target: 067.Anna_Hummingbird</p>
+              <div class="images">
+                <img src="images/012_correct_image3845_original.jpg" alt="original">
+                <img src="images/012_correct_image3845_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 7201</h2>
+              <p>True: 123.Henslow_Sparrow</p>
+              <p>Pred: 124.Le_Conte_Sparrow (1.000)</p>
+              <p>Visualization target: 124.Le_Conte_Sparrow</p>
+              <div class="images">
+                <img src="images/013_wrong_image7201_original.jpg" alt="original">
+                <img src="images/013_wrong_image7201_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 7652</h2>
+              <p>True: 131.Vesper_Sparrow</p>
+              <p>Pred: 076.Dark_eyed_Junco (1.000)</p>
+              <p>Visualization target: 076.Dark_eyed_Junco</p>
+              <div class="images">
+                <img src="images/014_wrong_image7652_original.jpg" alt="original">
+                <img src="images/014_wrong_image7652_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 6373</h2>
+              <p>True: 109.American_Redstart</p>
+              <p>Pred: 021.Eastern_Towhee (1.000)</p>
+              <p>Visualization target: 021.Eastern_Towhee</p>
+              <div class="images">
+                <img src="images/015_wrong_image6373_original.jpg" alt="original">
+                <img src="images/015_wrong_image6373_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 275</h2>
+              <p>True: 005.Crested_Auklet</p>
+              <p>Pred: 008.Rhinoceros_Auklet (1.000)</p>
+              <p>Visualization target: 008.Rhinoceros_Auklet</p>
+              <div class="images">
+                <img src="images/016_wrong_image275_original.jpg" alt="original">
+                <img src="images/016_wrong_image275_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 7164</h2>
+              <p>True: 123.Henslow_Sparrow</p>
+              <p>Pred: 124.Le_Conte_Sparrow (1.000)</p>
+              <p>Visualization target: 124.Le_Conte_Sparrow</p>
+              <div class="images">
+                <img src="images/017_wrong_image7164_original.jpg" alt="original">
+                <img src="images/017_wrong_image7164_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 2461</h2>
+              <p>True: 043.Yellow_bellied_Flycatcher</p>
+              <p>Pred: 038.Great_Crested_Flycatcher (0.999)</p>
+              <p>Visualization target: 038.Great_Crested_Flycatcher</p>
+              <div class="images">
+                <img src="images/018_wrong_image2461_original.jpg" alt="original">
+                <img src="images/018_wrong_image2461_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 10509</h2>
+              <p>True: 179.Tennessee_Warbler</p>
+              <p>Pred: 154.Red_eyed_Vireo (0.999)</p>
+              <p>Visualization target: 154.Red_eyed_Vireo</p>
+              <div class="images">
+                <img src="images/019_wrong_image10509_original.jpg" alt="original">
+                <img src="images/019_wrong_image10509_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 10794</h2>
+              <p>True: 184.Louisiana_Waterthrush</p>
+              <p>Pred: 183.Northern_Waterthrush (0.999)</p>
+              <p>Visualization target: 183.Northern_Waterthrush</p>
+              <div class="images">
+                <img src="images/020_wrong_image10794_original.jpg" alt="original">
+                <img src="images/020_wrong_image10794_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 1672</h2>
+              <p>True: 030.Fish_Crow</p>
+              <p>Pred: 029.American_Crow (0.999)</p>
+              <p>Visualization target: 029.American_Crow</p>
+              <div class="images">
+                <img src="images/021_wrong_image1672_original.jpg" alt="original">
+                <img src="images/021_wrong_image1672_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 812</h2>
+              <p>True: 015.Lazuli_Bunting</p>
+              <p>Pred: 014.Indigo_Bunting (0.997)</p>
+              <p>Visualization target: 014.Indigo_Bunting</p>
+              <div class="images">
+                <img src="images/022_wrong_image812_original.jpg" alt="original">
+                <img src="images/022_wrong_image812_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 1827</h2>
+              <p>True: 033.Yellow_billed_Cuckoo</p>
+              <p>Pred: 038.Great_Crested_Flycatcher (0.997)</p>
+              <p>Visualization target: 038.Great_Crested_Flycatcher</p>
+              <div class="images">
+                <img src="images/023_wrong_image1827_original.jpg" alt="original">
+                <img src="images/023_wrong_image1827_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+            <article class="card">
+              <h2>错误 | Image 9783</h2>
+              <p>True: 167.Hooded_Warbler</p>
+              <p>Pred: 180.Wilson_Warbler (0.997)</p>
+              <p>Visualization target: 180.Wilson_Warbler</p>
+              <div class="images">
+                <img src="images/024_wrong_image9783_original.jpg" alt="original">
+                <img src="images/024_wrong_image9783_attention.jpg" alt="attention">
+              </div>
+              <p class="note">人工标注：Local detail / Bird body / Background</p>
+            </article>
+            
+  </div>
+</body>
+</html>

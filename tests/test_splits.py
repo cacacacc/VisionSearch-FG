@@ -30,3 +30,10 @@ def test_image_id_files_round_trip(tmp_path: Path) -> None:
     write_image_ids(path, [3, 1, 2])
 
     assert read_image_ids(path) == [3, 1, 2]
+
+
+def test_read_image_ids_accepts_utf8_bom(tmp_path: Path) -> None:
+    path = tmp_path / "ids_with_bom.txt"
+    path.write_text("\ufeff9994\n11738\n", encoding="utf-8")
+
+    assert read_image_ids(path) == [9994, 11738]
