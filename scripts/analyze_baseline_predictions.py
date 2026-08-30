@@ -58,6 +58,8 @@ def main() -> None:
         root=data_config["root"],
         split=args.split,
         image_ids=read_image_ids(args.ids_path) if args.ids_path is not None else None,
+        crop_mode=data_config.get("crop_mode", "none"),
+        bbox_margin=float(data_config.get("bbox_margin", 0.0)),
         transform=build_classification_transform(image_size=data_config["image_size"], train=False),
     )
     dataloader = DataLoader(

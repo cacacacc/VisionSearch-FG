@@ -16,7 +16,12 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
+from visionsearch_fg.data import (
+    CUB200Dataset,
+    build_classification_transform,
+    crop_image_to_bbox,
+    read_image_ids,
+)
 from visionsearch_fg.models import build_contrastive_classifier, build_resnet18_classifier
 from visionsearch_fg.utils import load_yaml_config
 
@@ -62,6 +67,8 @@ def main() -> None:
         root=data_config["root"],
         split=args.split,
         image_ids=read_image_ids(args.ids_path) if args.ids_path is not None else None,
+        crop_mode=data_config.get("crop_mode", "none"),
+        bbox_margin=float(data_config.get("bbox_margin", 0.0)),
         transform=build_classification_transform(
             image_size=data_config["image_size"],
             train=False,
@@ -115,6 +122,9 @@ def main() -> None:
                 image_path=sample.image_path,
                 image_size=data_config["image_size"],
                 augmentation=data_config.get("augmentation", "hflip"),
+                bbox=sample.bbox,
+                crop_mode=data_config.get("crop_mode", "none"),
+                bbox_margin=float(data_config.get("bbox_margin", 0.0)),
             ).unsqueeze(0)
             heatmap = gradcam.generate(
                 image=image_tensor.to(device),
@@ -123,10 +133,15 @@ def main() -> None:
             image_name = make_image_name(index=index, record=record)
             original_path = image_dir / f"{image_name}_original.jpg"
             overlay_path = image_dir / f"{image_name}_gradcam.jpg"
+            heatmap_path = image_dir / f"{image_name}_gradcam_heatmap.npy"
+            np.save(heatmap_path, heatmap.astype(np.float32))
             save_original_and_overlay(
                 image_path=sample.image_path,
                 heatmap=heatmap,
                 image_size=data_config["image_size"],
+                bbox=sample.bbox,
+                crop_mode=data_config.get("crop_mode", "none"),
+                bbox_margin=float(data_config.get("bbox_margin", 0.0)),
                 original_path=original_path,
                 overlay_path=overlay_path,
                 alpha=args.alpha,
@@ -138,6 +153,7 @@ def main() -> None:
                 "target_class": class_names[target_label],
                 "original_path": str(original_path),
                 "gradcam_path": str(overlay_path),
+                "heatmap_path": str(heatmap_path),
                 "manual_focus_head": "",
                 "manual_focus_beak": "",
                 "manual_focus_wing": "",
@@ -271,6 +287,9 @@ def dataset_transform_image(
     image_path: Path,
     image_size: int,
     augmentation: str,
+    bbox: tuple[float, float, float, float] | None,
+    crop_mode: str,
+    bbox_margin: float,
 ) -> torch.Tensor:
     transform = build_classification_transform(
         image_size=image_size,
@@ -278,19 +297,32 @@ def dataset_transform_image(
         augmentation=augmentation,
     )
     with Image.open(image_path) as image:
-        return transform(image.convert("RGB"))
+        image = image.convert("RGB")
+        if crop_mode == "bbox":
+            if bbox is None:
+                raise ValueError(f"Missing bounding box for {image_path}")
+            image = crop_image_to_bbox(image, bbox, margin=bbox_margin)
+        return transform(image)
 
 
 def save_original_and_overlay(
     image_path: Path,
     heatmap: np.ndarray,
     image_size: int,
+    bbox: tuple[float, float, float, float] | None,
+    crop_mode: str,
+    bbox_margin: float,
     original_path: Path,
     overlay_path: Path,
     alpha: float,
 ) -> None:
     with Image.open(image_path) as image:
-        original = image.convert("RGB").resize((image_size, image_size))
+        original = image.convert("RGB")
+        if crop_mode == "bbox":
+            if bbox is None:
+                raise ValueError(f"Missing bounding box for {image_path}")
+            original = crop_image_to_bbox(original, bbox, margin=bbox_margin)
+        original = original.resize((image_size, image_size))
 
     original_path.parent.mkdir(parents=True, exist_ok=True)
     original.save(original_path, quality=95)
@@ -364,6 +396,7 @@ def write_records_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "target_class",
         "original_path",
         "gradcam_path",
+        "heatmap_path",
         "manual_focus_head",
         "manual_focus_beak",
         "manual_focus_wing",

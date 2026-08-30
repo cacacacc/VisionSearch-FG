@@ -66,6 +66,8 @@ def main() -> None:
         root=data_config["root"],
         split=args.split,
         image_ids=read_image_ids(args.ids_path),
+        crop_mode=data_config.get("crop_mode", "none"),
+        bbox_margin=float(data_config.get("bbox_margin", 0.0)),
         transform=build_classification_transform(
             image_size=data_config["image_size"],
             train=False,
@@ -131,6 +133,8 @@ def main() -> None:
         "backbone": model_config.get("backbone", "resnet18"),
         "feature": args.feature,
         "metric": args.metric,
+        "crop_mode": data_config.get("crop_mode", "none"),
+        "bbox_margin": float(data_config.get("bbox_margin", 0.0)),
         "num_samples": len(records),
         "embedding_dim": int(embeddings.shape[1]),
         "storage_bytes_float32": storage_bytes,

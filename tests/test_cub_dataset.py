@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PIL import Image
+import pytest
 
 from visionsearch_fg.data import CUB200Dataset, build_classification_transform
 
@@ -58,3 +59,29 @@ def test_cub_dataset_filters_by_image_ids_inside_selected_split(tmp_path: Path) 
 
     assert len(dataset) == 1
     assert dataset[0]["image_id"] == 2
+
+
+def test_cub_dataset_applies_bbox_crop_before_transform(tmp_path: Path) -> None:
+    _write_fake_cub(tmp_path)
+    image_path = tmp_path / "images" / "001.Black_footed_Albatross" / "image_0001.jpg"
+    image = Image.new("RGB", (40, 30), color=(255, 0, 0))
+    for x in range(10, 30):
+        for y in range(5, 15):
+            image.putpixel((x, y), (0, 255, 0))
+    image.save(image_path)
+    (tmp_path / "bounding_boxes.txt").write_text("1 10 5 20 10\n2 0 0 32 32\n", encoding="utf-8")
+
+    dataset = CUB200Dataset(root=tmp_path, split="train", crop_mode="bbox")
+    sample = dataset[0]
+    red, green, blue = sample["image"].getpixel((0, 0))
+
+    assert sample["image"].size == (20, 10)
+    assert green > red
+    assert green > blue
+
+
+def test_cub_dataset_requires_bbox_file_when_bbox_crop_is_enabled(tmp_path: Path) -> None:
+    _write_fake_cub(tmp_path)
+
+    with pytest.raises(FileNotFoundError):
+        CUB200Dataset(root=tmp_path, split="train", crop_mode="bbox")

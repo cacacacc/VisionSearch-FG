@@ -1127,6 +1127,10 @@ T-SNE / UMAP 建议从 validation 或 test 中采样：
 | P5 | Projection Head Ablation | about 4,795 train | 30/group |
 | P5 | Embedding Dim Ablation | about 4,795 train | 30/group |
 | P6 | Visualization | Val/Test | 0 |
+| P7 | BBox Crop / Fusion / PCA | Val/Test or about 4,795 train | 0 or 25-30 |
+| P8 | Part Alignment Evaluation | Val/Test | 0 |
+| P8 | Local Token Pooling Retrieval | Val/Test | 0 |
+| P8 | Part-aware Training | about 4,795 train | 25-40 |
 
 这些数字不是理论规定，而是结合 CUB 数据规模、pretrained backbone、项目目标和计算预算制定的起始协议。
 
@@ -1138,7 +1142,40 @@ best validation checkpoint
 
 而不是机械地取最后一轮。
 
-## 17. Random Seeds
+## 17. Phase 7-8：Foreground-aware 与 Part-aware 扩展
+
+Phase 7 和 Phase 8 是 Phase 6 可解释性分析之后的结构化优化方向。
+
+Phase 7 研究 foreground-aware input：
+
+```text
+BBox crop
+Original + BBox feature fusion
+Fusion PCA compression
+```
+
+其中 BBox crop 使用 CUB 官方 bounding box，属于 annotation-assisted setting，必须单独报告。
+
+Phase 8 研究 part-aware / local feature learning：
+
+```text
+Part annotation alignment evaluation
+Local token pooling
+Local-global feature fusion
+Part-supervised auxiliary study
+```
+
+其中 CUB part locations 优先用于 evaluation / supervision study，不应默认成为最终 test pipeline 的必要输入。若最终方法依赖人工 part coordinates，必须明确标注为 oracle 或 annotation-assisted setting。
+
+建议顺序：
+
+```text
+1. 先量化 Grad-CAM / Swin attention 与 beak、eye、wing 等 part 的对齐程度。
+2. 再做 0 epoch 的 local token pooling retrieval，验证局部 token 是否能改善检索。
+3. 最后再训练 part-aware local-global 模型。
+```
+
+## 18. Random Seeds
 
 如果算力允许，最终最重要的模型至少重复 3 个 seeds：
 
@@ -1170,7 +1207,7 @@ Recall@10 = 84.7 ± 0.8
 
 这比单独报告一个数字更有科研说服力，因为它说明提升不是某个随机初始化带来的偶然结果。
 
-## 18. 当前项目状态说明
+## 19. 当前项目状态说明
 
 Phase 1 Day 1 到 Day 5 的早期运行属于 bootstrap 实验，主要目标是跑通数据、训练、验证、checkpoint 和错误分析链路。
 

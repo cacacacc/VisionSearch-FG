@@ -44,6 +44,8 @@ docs/global_training_protocol.md
 | Phase 4 | 现代 backbone 对比 | ResNet-18 vs Swin-Tiny |
 | Phase 5 | 表征改进 | classification loss + supervised contrastive loss |
 | Phase 6 | 可解释性分析 | Grad-CAM, attention visualization, t-SNE |
+| Phase 7 | Foreground-aware 检索优化 | BBox crop, original+bbox fusion, PCA compression |
+| Phase 8 | Part-aware / Local Feature Learning | CUB part alignment, local token pooling, local-global fusion |
 
 ## 项目结构
 
