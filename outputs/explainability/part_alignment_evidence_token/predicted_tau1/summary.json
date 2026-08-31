@@ -1,0 +1,63 @@
+{
+  "num_records": 24,
+  "beak_num_eligible": 24,
+  "beak_peak_hit_rate": 0.125,
+  "beak_mean_peak_distance_px": 99.89086542677808,
+  "beak_mean_heat_mass": 0.055860723842711256,
+  "eye_num_eligible": 24,
+  "eye_peak_hit_rate": 0.041666666666666664,
+  "eye_mean_peak_distance_px": 89.92435396085149,
+  "eye_mean_heat_mass": 0.023779168887200317,
+  "head_num_eligible": 24,
+  "head_peak_hit_rate": 0.125,
+  "head_mean_peak_distance_px": 67.09627520081968,
+  "head_mean_heat_mass": 0.10830921030355084,
+  "wing_num_eligible": 23,
+  "wing_peak_hit_rate": 0.17391304347826086,
+  "wing_mean_peak_distance_px": 61.53912852354531,
+  "wing_mean_heat_mass": 0.13466801835040434,
+  "body_num_eligible": 24,
+  "body_peak_hit_rate": 0.2916666666666667,
+  "body_mean_peak_distance_px": 40.63447433478143,
+  "body_mean_heat_mass": 0.2413632461910944,
+  "target_num_eligible": 24,
+  "target_peak_hit_rate": 0.2916666666666667,
+  "target_mean_peak_distance_px": 47.24827641831738,
+  "records": "outputs\\explainability\\swin_evidence_token_part_alignment_source\\20260830_141148_foreground_swin_tiny_bbox224\\predicted_tau1\\evidence_records.csv",
+  "config": "configs\\foreground_swin_tiny_bbox224.yaml",
+  "cub_root": "data\\raw\\CUB_200_2011",
+  "image_size": 224,
+  "crop_mode": "bbox",
+  "bbox_margin": 0.15,
+  "radius_pixels": 24.0,
+  "part_groups": {
+    "beak": [
+      "beak"
+    ],
+    "eye": [
+      "left eye",
+      "right eye"
+    ],
+    "head": [
+      "beak",
+      "crown",
+      "forehead",
+      "left eye",
+      "right eye",
+      "nape",
+      "throat"
+    ],
+    "wing": [
+      "left wing",
+      "right wing"
+    ],
+    "body": [
+      "back",
+      "belly",
+      "breast",
+      "left wing",
+      "right wing",
+      "tail"
+    ]
+  }
+}

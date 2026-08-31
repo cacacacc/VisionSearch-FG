@@ -1,0 +1,12 @@
+{
+  "num_scanned": 24,
+  "num_correct": 15,
+  "num_wrong": 9,
+  "accuracy": 0.625,
+  "num_selected": 24,
+  "num_selected_correct": 15,
+  "num_selected_wrong": 9,
+  "visualization_type": "class_evidence_weighted_swin_token_map",
+  "target_class": "predicted",
+  "temperature": 1.0
+}
