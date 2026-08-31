@@ -1,0 +1,62 @@
+project:
+  name: VisionSearch-FG
+  phase: phase8_part_aware
+  seed: 42
+
+experiment:
+  name: head_aware_swin_tiny_selector
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 224
+  augmentation: basic
+  crop_mode: bbox
+  bbox_margin: 0.15
+  num_workers: 2
+  train_split: train
+  val_split: train
+  train_ids_path: data/processed/splits/cub_train_ids_seed42.txt
+  val_ids_path: data/processed/splits/cub_val_ids_seed42.txt
+
+model:
+  backbone: swin_head_selector
+  pretrained: false
+  init_checkpoint: outputs/checkpoints/foreground_swin_tiny_bbox224/20260830_141148_foreground_swin_tiny_bbox224/best.pt
+  freeze_backbone: true
+  fine_tune_mode: frozen
+  selector_temperature: 1.0
+  embedding_dim: 1536
+  num_classes: 200
+
+training:
+  epochs: 12
+  batch_size: 8
+  optimizer: adamw
+  learning_rate: 0.0005
+  backbone_learning_rate: 0.00001
+  selector_learning_rate: 0.0005
+  classifier_learning_rate: 0.0005
+  weight_decay: 0.0001
+  early_stopping_patience: 4
+  selector_loss_weight: 0.2
+  selector_heatmap_size: 7
+  selector_heatmap_sigma: 1.0
+
+runtime:
+  max_train_batches:
+  max_val_batches:
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+    - top5_accuracy
+    - recall@1
+    - recall@5
+    - recall@10
+    - mAP
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs

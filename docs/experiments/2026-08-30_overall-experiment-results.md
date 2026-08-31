@@ -13,8 +13,9 @@
 | Swin Original + BBox concat | Swin-Tiny | 原图 224 + BBox crop 224 | CE | concat L2 backbone h | 80.00% | 79.52% | 94.92% | 69.75% | 89.42% | 94.33% | 57.52% | 未压缩 fusion retrieval 对照；分类指标沿用 BBox crop 模型 |
 | Swin Original + BBox concat PCA | Swin-Tiny | 原图 224 + BBox crop 224 | CE | PCA 512-D | 80.00% | 79.52% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | 当前最强 retrieval，且存储低于 1536-D fusion |
 | Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224, margin=0.15 | CE | class-evidence weighted local | 80.00% | 79.52% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | 当前最高 mAP / Recall@1；不重新训练 |
+| Swin Head-aware Soft Selector | Swin-Tiny | BBox crop 224, margin=0.15 | CE + head selector | global+learned local | 82.83% | 82.55% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | 当前最高分类；retrieval 未超过 evidence-weighted local |
 
-当前最高分类结果是 `Swin-Tiny BBox Crop 224`，Val Acc 为 80.00%。当前最高 mAP / Recall@1 检索结果是 `Swin BBox Evidence-weighted Local`，mAP 为 59.62%，Recall@1 为 71.25%；当前最高 Recall@5 / Recall@10 仍来自 `Swin Original + BBox concat PCA` 或未压缩 fusion，Recall@5 为 89.50%，Recall@10 为 94.33%。相对原图 Swin-Tiny baseline，BBox crop 的 Val Acc 从 75.50% 提升到 80.00%，提升 4.50 个百分点；class-evidence weighted local pooling 的 mAP 从 49.04% 提升到 59.62%，提升 10.58 个百分点，Recall@1 从 61.25% 提升到 71.25%，提升 10.00 个百分点。这个结果和 Phase 6 的解释性分析一致：背景参与限制了原图输入模型的细粒度识别和检索排序，而 foreground crop 与类别证据驱动的局部 token pooling 能进一步改善前排排序质量。
+当前最高分类结果是 `Swin Head-aware Soft Selector`，Val Acc 为 82.83%，Macro-F1 为 82.55%。当前最高 mAP / Recall@1 检索结果仍是 `Swin BBox Evidence-weighted Local`，mAP 为 59.62%，Recall@1 为 71.25%；当前最高 Recall@5 / Recall@10 仍来自 `Swin Original + BBox concat PCA` 或未压缩 fusion，Recall@5 为 89.50%，Recall@10 为 94.33%。相对原图 Swin-Tiny baseline，BBox crop 的 Val Acc 从 75.50% 提升到 80.00%，提升 4.50 个百分点；head-aware selector 进一步把分类 Val Acc 提升到 82.83%。但 head-aware selector 的 retrieval mAP 只有 55.71%，说明分类性能提升不必然带来更好的检索 embedding。class-evidence weighted local pooling 的 mAP 从 49.04% 提升到 59.62%，Recall@1 从 61.25% 提升到 71.25%，仍是当前最强检索方案。
 
 ## Oracle 诊断结果
 
@@ -61,6 +62,7 @@
 | Feature Fusion | Swin Original + BBox concat | 80.00% | 94.92% | 69.75% | 89.42% | 94.33% | 57.52% | 未压缩 fusion retrieval 对照 |
 | Feature Fusion | Swin Original + BBox concat PCA | 80.00% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | 当前最高 Recall@5 / Recall@10 |
 | Part-aware Post-hoc | BBox evidence-weighted local tau1.0 | 80.00% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | 当前最高 mAP / Recall@1 |
+| Part-aware Training | Head-aware soft selector | 82.83% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | 分类最高，但检索未提升 |
 
 ## Phase 5 Representation Learning
 
@@ -84,4 +86,4 @@ Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值�
 
 当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是目前最有效的单模型优化方向。Original + BBox feature fusion 进一步把 mAP 提升到 57.52%，说明原图全局上下文和 bbox 前景细节存在互补。Fusion PCA 512-D 在 mAP 小幅提升到 57.72% 的同时把 storage 从 7.031 MiB 降到 2.344 MiB，因此如果优先考虑 Recall@5 / Recall@10 与存储成本，默认 retrieval 表示应采用 `Swin Original + BBox concat PCA 512-D`。
 
-下一阶段不应只盲目换更大 backbone。Phase 6 的错误模式已经指向喙、眼睛、头部、翼部纹理等局部线索不稳定，因此更有价值的方向是 `Part-aware / Local Feature Learning`。8.2 证明 naive token norm Top-K 不够可靠；8.3 证明 class-evidence weighted local pooling 能显著提高 mAP 和 Recall@1；8.4a 的 oracle part crop 进一步证明 head 局部信息具有明确上界收益；8.4b 说明把 evidence heatmap 直接做 hard crop 会显著退化；8.4c 说明 `predicted tau=1.0` 是稳定的正式设置，而 `true tau=0.5` 暴露了 selector 上界；8.4d 说明 Top-M class ensemble 无法有效缩小该上界差距。下一步应把目标收窄到 head-aware / discriminative soft local selector，而不是无差别融合所有 part、直接裁剪局部图像或继续堆 top-M 类别。
+下一阶段不应只盲目换更大 backbone。Phase 6 的错误模式已经指向喙、眼睛、头部、翼部纹理等局部线索不稳定，因此更有价值的方向是 `Part-aware / Local Feature Learning`。8.2 证明 naive token norm Top-K 不够可靠；8.3 证明 class-evidence weighted local pooling 能显著提高 mAP 和 Recall@1；8.4a 的 oracle part crop 进一步证明 head 局部信息具有明确上界收益；8.4b 说明把 evidence heatmap 直接做 hard crop 会显著退化；8.4c 说明 `predicted tau=1.0` 是稳定的正式设置，而 `true tau=0.5` 暴露了 selector 上界；8.4d 说明 Top-M class ensemble 无法有效缩小该上界差距；8.5 说明 head-aware selector 能提升分类，但仅靠 CE + head selector BCE 不能改善 retrieval geometry。下一步如果目标是检索，应加入 SupCon / metric learning，而不是只做 head localization。

@@ -1057,6 +1057,213 @@ outputs/embeddings/swin_topm_evidence_retrieval/20260830_141148_foreground_swin_
    说明中等平滑的局部证据更稳。
 ```
 
+## 实验 8.5：Head-aware Soft Selector Training
+
+### 研究问题
+
+```text
+用 CUB head part annotations 作为训练期弱监督，
+能否训练一个不依赖测试期 part coordinates 的 soft local selector，
+从而提升 classification 和 retrieval？
+```
+
+### 动机
+
+前面的实验已经形成清晰证据链：
+
+```text
+1. 8.4a：Oracle Head 有收益，global + head mAP = 59.17%。
+2. 8.4b：Hard crop 失败，auto crop mAP = 27.75%。
+3. 8.4c：Soft token weighting 成功，predicted tau=1.0 mAP = 59.62%。
+4. 8.4d：Top-M ensemble 无法继续缩小 oracle gap。
+```
+
+因此下一步不是继续做 hard crop 或 top-M 调参，而是训练一个 soft selector：
+
+```text
+Image
+↓
+Swin final-stage tokens
+↓
+learned selector logits
+↓
+softmax selector weights
+↓
+local embedding = weighted sum(tokens)
+↓
+final embedding = L2Normalize([global; local])
+↓
+classification / retrieval
+```
+
+### 训练监督
+
+训练时使用 CUB `parts/part_locs.txt` 生成 head heatmap：
+
+```text
+head parts = beak, crown, forehead, left eye, right eye, nape, throat
+target heatmap size = 7 x 7
+target heatmap = Gaussian around visible head parts
+```
+
+训练 loss：
+
+```text
+L = L_CE + lambda_selector * L_selector
+
+L_CE       = CrossEntropy(classifier([global; local]), label)
+L_selector = BCEWithLogits(selector_logits, head_heatmap)
+```
+
+当前默认：
+
+```text
+lambda_selector = 0.2
+selector_temperature = 1.0
+fine_tune_mode = frozen
+```
+
+`fine_tune_mode=frozen` 的含义：先冻结已经训练好的 BBox Swin backbone，只训练 selector 和新的 fusion classifier。这样成本较低，也能判断 selector 本身是否有效。若结果有效，再考虑 full fine-tuning。
+
+注意：本实验训练期使用 part annotations，因此属于 part-supervised setting。推理/检索阶段不再输入 part coordinates。
+
+### 配置文件
+
+```text
+configs/head_aware_swin_tiny_selector.yaml
+```
+
+初始化 checkpoint：
+
+```text
+outputs/checkpoints/foreground_swin_tiny_bbox224/20260830_141148_foreground_swin_tiny_bbox224/best.pt
+```
+
+该 checkpoint 只加载兼容的 backbone 参数；旧的 classifier 不加载，因为新模型 classifier 输入是 `[global; local] = 1536-D`。
+
+### Smoke Test 指令
+
+正式训练前先跑很小 batch 闭环：
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+.\.venv\Scripts\python.exe scripts\train_swin_head_selector.py `
+  --config configs\head_aware_swin_tiny_selector.yaml `
+  --device cpu `
+  --epochs 1 `
+  --max-train-batches 2 `
+  --max-val-batches 2
+```
+
+### 正式训练指令
+
+CPU 可跑，但会比较慢：
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+.\.venv\Scripts\python.exe scripts\train_swin_head_selector.py `
+  --config configs\head_aware_swin_tiny_selector.yaml `
+  --device cpu
+```
+
+如果有可用 GPU，把最后一行改成：
+
+```powershell
+  --device cuda
+```
+
+### Retrieval Evaluation 指令
+
+训练结束后运行：
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+$run = Get-ChildItem outputs\checkpoints\head_aware_swin_tiny_selector |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1 -ExpandProperty Name
+
+.\.venv\Scripts\python.exe scripts\evaluate_swin_head_selector_retrieval.py `
+  --config configs\head_aware_swin_tiny_selector.yaml `
+  --checkpoint "outputs\checkpoints\head_aware_swin_tiny_selector\$run\best.pt" `
+  --split train `
+  --ids-path data\processed\splits\cub_val_ids_seed42.txt `
+  --device cpu `
+  --metric cosine `
+  --features embedding global local `
+  --output-dir outputs\embeddings\swin_head_selector_retrieval
+```
+
+输出：
+
+```text
+outputs/embeddings/swin_head_selector_retrieval/<run_id>/summary.csv
+outputs/embeddings/swin_head_selector_retrieval/<run_id>/<feature>/cosine/summary.json
+```
+
+### 结果表
+
+| Method | Feature | Dim | Val Acc | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| BBox global baseline | backbone h | 768 | 80.00% | 68.42% | 86.50% | 93.08% | 55.51% | 对照 |
+| Evidence-weighted local | post-hoc local | 768 | 80.00% | 71.25% | 87.83% | 93.58% | 59.62% | 当前正式最强 |
+| Head-aware selector | embedding | 1536 | 82.83% | 67.67% | 86.92% | 93.83% | 55.71% | 分类提升，但 retrieval 未超过 evidence-weighted local |
+| Head-aware selector | global | 768 | 82.83% | 68.42% | 86.50% | 93.08% | 55.51% | backbone 冻结，因此 global 与 BBox baseline 相同 |
+| Head-aware selector | local | 768 | 82.83% | 67.08% | 86.33% | 92.83% | 54.88% | 学到的 local branch 可用，但不够强 |
+
+训练结果：
+
+```text
+run_id = 20260831_171443_head_aware_swin_tiny_selector
+best_epoch = 12
+Val Acc = 82.83%
+Val Macro-F1 = 82.55%
+Val Top-5 Acc = 95.42%
+```
+
+相对 BBox global classification baseline：
+
+```text
+Val Acc: 80.00% -> 82.83% (+2.83 pp)
+Top-5 Acc: 94.92% -> 95.42% (+0.50 pp)
+```
+
+相对 retrieval baseline：
+
+```text
+BBox global mAP = 55.51%
+Head-aware selector embedding mAP = 55.71%
+Evidence-weighted local mAP = 59.62%
+```
+
+### 当前结论
+
+```text
+1. Head-aware soft selector training 明显提升分类性能：
+   Val Acc 从 80.00% 提升到 82.83%。
+2. 但 retrieval 没有同步提升：
+   embedding mAP 只有 55.71%，远低于 post-hoc evidence-weighted local 的 59.62%。
+3. 这说明“对齐 head heatmap”可以帮助分类，但不一定改善 embedding geometry。
+4. 当前训练 loss 只有 CE + selector BCE，没有直接约束同类 embedding compactness 或异类 separation。
+5. 下一步如果继续优化 retrieval，应加入 retrieval-oriented loss：
+   CE + selector loss + SupCon / metric learning，而不是只强化 head localization。
+```
+
+### 判断标准
+
+```text
+1. 如果 embedding 超过 evidence-weighted local：
+   说明训练式 selector 比 post-hoc classifier evidence 更有效。
+2. 如果 local 单独较弱但 embedding 提升：
+   说明 selector 学到的是补充信息，而不是全局特征替代品。
+3. 如果 embedding 不如 BBox global：
+   说明冻结 backbone 下 selector 训练不足，下一步考虑 full fine-tuning 或降低 selector_loss_weight。
+4. 如果 selector loss 下降但 retrieval 不升：
+   说明“对齐 head”不等于“提升 retrieval”，需要加入 retrieval-oriented loss。
+```
+
 ## 实验 8.4：Part-aware Training
 
 ### 研究问题
