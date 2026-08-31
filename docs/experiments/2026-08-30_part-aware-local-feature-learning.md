@@ -578,6 +578,485 @@ heat mass 分布显示，evidence-token heatmap 的响应仍主要集中在较�
 5. 因此后续如果要进一步提高细粒度检索，不能只做 post-hoc token weighting，应该进入真正的 part-aware training 或 part-guided auxiliary evaluation。
 ```
 
+## 实验 8.4a：Part-guided Oracle Crop Upper Bound
+
+### 研究问题
+
+```text
+如果直接使用 CUB part annotations 裁出 head / wing / body，
+这些局部视图是否能为 retrieval 提供比全局 BBox crop 更强的细粒度信息？
+```
+
+### 为什么先做这个实验
+
+这个实验不是正式无标注 pipeline，因为它使用了人工 part 坐标。它的作用是建立 upper bound：
+
+```text
+如果 oracle part crop 有效：
+说明局部部位确实含有可利用的细粒度检索信息，后续值得做 part-aware training。
+
+如果 oracle part crop 无效：
+说明当前模型或数据设置下，显式追 head / wing / body 的收益有限，不应急着投入复杂结构。
+```
+
+因此它是进入真正训练前的低成本验证。
+
+### 方法
+
+固定模型：
+
+```text
+Swin-Tiny BBox Crop 224
+checkpoint = outputs/checkpoints/foreground_swin_tiny_bbox224/20260830_141148_foreground_swin_tiny_bbox224/best.pt
+Training Epoch = 0
+```
+
+固定 split：
+
+```text
+Validation IDs = data/processed/splits/cub_val_ids_seed42.txt
+Query = Validation image
+Gallery = Validation images - query itself
+```
+
+生成以下视图：
+
+| View | 含义 |
+| --- | --- |
+| global | BBox crop 后的整鸟图像 |
+| part_head | 由 beak / eye / crown / forehead / nape / throat 等 head parts 生成的局部 crop |
+| part_wing | 由 left wing / right wing 生成的局部 crop |
+| part_body | 由 back / belly / breast / wing / tail 生成的局部 crop |
+| global_head_concat_l2 | global 与 head embedding 融合 |
+| global_head_wing_concat_l2 | global、head、wing embedding 融合 |
+| global_head_wing_body_concat_l2 | global、head、wing、body embedding 融合 |
+
+局部 crop 规则：
+
+```text
+1. 读取 CUB parts/part_locs.txt。
+2. 对每个 part group 取可见 part 的最小包围框。
+3. 按 crop_scale 扩大局部框。
+4. 使用 min_crop_ratio 防止只裁出一个极小 patch。
+5. resize 到 224 x 224，送入同一个 Swin checkpoint。
+```
+
+默认参数：
+
+```text
+crop_scale = 2.0
+min_crop_ratio = 0.25
+```
+
+### 运行指令
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+.\.venv\Scripts\python.exe scripts\evaluate_part_guided_crop_retrieval.py `
+  --config configs\foreground_swin_tiny_bbox224.yaml `
+  --checkpoint outputs\checkpoints\foreground_swin_tiny_bbox224\20260830_141148_foreground_swin_tiny_bbox224\best.pt `
+  --split train `
+  --ids-path data\processed\splits\cub_val_ids_seed42.txt `
+  --device cpu `
+  --metric cosine `
+  --crop-scale 2.0 `
+  --min-crop-ratio 0.25 `
+  --output-dir outputs\embeddings\part_guided_crop_retrieval
+```
+
+输出位置：
+
+```text
+outputs/embeddings/part_guided_crop_retrieval/20260830_141148_foreground_swin_tiny_bbox224/summary.csv
+outputs/embeddings/part_guided_crop_retrieval/20260830_141148_foreground_swin_tiny_bbox224/<variant>/cosine/summary.json
+```
+
+### 当前结果
+
+| Variant | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| global | 768 | 68.42% | 86.50% | 93.08% | 55.51% | BBox crop 全局 baseline |
+| part_head | 768 | 62.00% | 83.58% | 89.83% | 47.75% | 只看头部弱于全局，但保留了较强语义 |
+| part_wing | 768 | 35.33% | 61.83% | 71.33% | 23.70% | 只看翼部明显不足 |
+| part_body | 768 | 62.75% | 85.42% | 91.25% | 49.67% | 身体/羽毛纹理强于 wing，但仍弱于全局 |
+| global_head_concat_l2 | 1536 | 72.42% | 90.00% | 94.00% | 59.17% | 最强 oracle fusion |
+| global_head_wing_concat_l2 | 2304 | 69.42% | 88.92% | 93.58% | 56.43% | 加入 wing 后低于 global+head |
+| global_head_wing_body_concat_l2 | 3072 | 70.00% | 89.75% | 93.67% | 57.82% | 多局部融合有效，但不如只加 head |
+
+part 可见性统计：
+
+```text
+head missing = 0 / 1200
+wing missing = 37 / 1200
+body missing = 6 / 1200
+```
+
+相对 BBox global baseline，最强的 `global_head_concat_l2` 提升为：
+
+```text
+Recall@1: 68.42% -> 72.42%  (+4.00 pp)
+Recall@5: 86.50% -> 90.00%  (+3.50 pp)
+Recall@10: 93.08% -> 94.00% (+0.92 pp)
+mAP: 55.51% -> 59.17%       (+3.66 pp)
+```
+
+### 结果解释
+
+```text
+1. part-only 不能替代全局图像：
+   head / body / wing 单独使用都弱于 BBox global。
+2. head 是最有效的局部补充：
+   global + head 达到最高 Recall@1、Recall@5 和 mAP。
+3. wing 与 body 不应简单堆叠：
+   global + head + wing 和 global + head + wing + body 都低于 global + head，
+   说明更多 oracle part 不一定更好，局部特征会引入噪声和维度成本。
+4. 这个结果强支持后续做 head-aware / discriminative local region learning：
+   目标不是让模型看所有部位，而是学会稳定选择真正有判别力的局部区域。
+```
+
+正式论文式表述必须强调：
+
+```text
+该实验使用人工 part coordinates，因此只作为 oracle upper bound / diagnostic analysis，
+不能和无需人工 part 输入的正式 deployment pipeline 直接等价比较。
+```
+
+## 实验 8.4b：Evidence-token Auto Crop Retrieval
+
+### 研究问题
+
+```text
+不使用人工 part coordinates，仅根据 Swin class-evidence token heatmap 自动裁剪局部区域，
+能否接近 oracle head crop 的检索收益？
+```
+
+### 实验意义
+
+8.4a 已经证明 `global + oracle head` 有明显上界收益：
+
+```text
+BBox global mAP = 55.51%
+BBox + Oracle Head mAP = 59.17%
+```
+
+但 oracle head crop 依赖 CUB 人工 part 坐标，不能作为正式部署方案。8.4b 的目标是把这个收益转成自动方法：
+
+```text
+BBox image
+↓
+Swin final-stage tokens
+↓
+classifier weight 对每个 token 打类别证据分
+↓
+选择高证据 token 区域
+↓
+自动裁剪 local crop
+↓
+重新提取 auto-crop embedding
+↓
+retrieval evaluation
+```
+
+### 方法
+
+固定模型：
+
+```text
+Swin-Tiny BBox Crop 224
+checkpoint = outputs/checkpoints/foreground_swin_tiny_bbox224/20260830_141148_foreground_swin_tiny_bbox224/best.pt
+Training Epoch = 0
+```
+
+自动 crop 规则：
+
+```text
+1. 使用 predicted class 作为 token evidence 的目标类别。
+2. score(token_i) = token_i dot classifier_weight[predicted_class]
+3. 对 token score 做 softmax(score / tau)，得到 evidence heatmap。
+4. 选择 heatmap >= max(heatmap) * threshold_ratio 的 token cell。
+5. 将被选 token cell 转成 224 x 224 图像坐标里的 crop box。
+6. 用 min_crop_ratio 和 padding_ratio 控制 crop 尺寸，避免过小或过紧。
+7. 将 auto crop resize 到 224 x 224，再送入同一个 Swin checkpoint 提 embedding。
+```
+
+默认参数：
+
+```text
+tau = 1.0
+threshold_ratio = 0.6
+min_crop_ratio = 0.35
+padding_ratio = 0.08
+```
+
+对照组：
+
+| Variant | 含义 |
+| --- | --- |
+| global | BBox crop 全局 baseline |
+| evidence_weighted_tau1 | 8.3 的 token-level weighted local feature |
+| evidence_auto_crop_tau1 | 根据 evidence heatmap 自动裁图后的 crop embedding |
+| global_evidence_weighted_tau1_concat_l2 | global + weighted local |
+| global_evidence_auto_crop_tau1_concat_l2 | global + auto crop |
+
+### 运行指令
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+.\.venv\Scripts\python.exe scripts\evaluate_swin_evidence_crop_retrieval.py `
+  --config configs\foreground_swin_tiny_bbox224.yaml `
+  --checkpoint outputs\checkpoints\foreground_swin_tiny_bbox224\20260830_141148_foreground_swin_tiny_bbox224\best.pt `
+  --split train `
+  --ids-path data\processed\splits\cub_val_ids_seed42.txt `
+  --device cpu `
+  --metric cosine `
+  --target-class predicted `
+  --temperature 1.0 `
+  --threshold-ratio 0.6 `
+  --min-crop-ratio 0.35 `
+  --padding-ratio 0.08 `
+  --output-dir outputs\embeddings\swin_evidence_crop_retrieval
+```
+
+输出位置：
+
+```text
+outputs/embeddings/swin_evidence_crop_retrieval/20260830_141148_foreground_swin_tiny_bbox224/predicted_tau1/summary.csv
+outputs/embeddings/swin_evidence_crop_retrieval/20260830_141148_foreground_swin_tiny_bbox224/predicted_tau1/<variant>/cosine/summary.json
+```
+
+### 结果表
+
+| Variant | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | Mean Crop Area | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| global | 768 | 68.42% | 86.50% | 93.08% | 55.51% | 26.42% | BBox crop 全局 baseline |
+| evidence_weighted_tau1 | 768 | 71.25% | 87.83% | 93.58% | 59.62% | 26.42% | token-level weighted local，当前最强 mAP |
+| evidence_auto_crop_tau1 | 768 | 39.75% | 65.42% | 75.17% | 27.75% | 26.42% | 自动硬裁剪明显失败 |
+| global_evidence_weighted_tau1_concat_l2 | 1536 | 70.67% | 87.92% | 94.00% | 58.31% | 26.42% | 全局 + token weighted local，Recall@10 较高 |
+| global_evidence_auto_crop_tau1_concat_l2 | 1536 | 64.08% | 85.92% | 91.67% | 50.61% | 26.42% | 全局 + auto crop 仍低于 global |
+
+相对关键 baseline：
+
+```text
+BBox global:
+mAP = 55.51%
+
+Oracle Head:
+mAP = 59.17%
+
+Evidence weighted token:
+mAP = 59.62%
+
+Evidence auto crop:
+mAP = 27.75%
+
+Global + evidence auto crop:
+mAP = 50.61%
+```
+
+### 当前结论
+
+```text
+1. Evidence-token auto crop 没有接近 oracle head upper bound。
+2. 直接把 heatmap 转成 crop 会严重损失 retrieval 表现：
+   mAP 从 BBox global 的 55.51% 降到 27.75%。
+3. 即使与 global 拼接，global + auto crop 也只有 50.61% mAP，仍低于 global。
+4. 这说明当前 evidence heatmap 更适合做 token-level soft weighting，
+   不适合直接做 hard crop。
+5. 后续应优先发展 differentiable / soft local pooling，
+   而不是把局部区域裁出来重新送入 backbone。
+```
+
+### 判断标准
+
+```text
+1. 如果 global + auto crop 接近或超过 global + oracle head：
+   说明自动局部裁剪已经接近 part-guided upper bound，可以成为正式 pipeline。
+2. 如果 auto crop 明显低于 evidence weighted local：
+   说明重新裁图会破坏上下文或放大错误区域，后续应优先保留 token-level pooling。
+3. 如果 auto crop 单独很弱但 global + auto crop 有提升：
+   说明自动 crop 不能替代全局图，但能作为补充局部证据。
+4. 如果 auto crop 和 fusion 都不提升：
+   说明当前 heatmap-to-crop 策略不可靠，应改 selector 或进入监督式 part-aware training。
+```
+
+## 实验 8.4c：Evidence-weighted Local Temperature Sensitivity
+
+### 研究问题
+
+```text
+Class-evidence weighted local pooling 对 temperature 是否敏感？
+predicted class 与 oracle true class 之间还存在多少上界差距？
+```
+
+### 方法
+
+固定模型、数据和 retrieval protocol：
+
+```text
+Swin-Tiny BBox Crop 224
+Validation = 1200 images
+Metric = cosine
+Training Epoch = 0
+```
+
+只改变：
+
+```text
+target_class = predicted / true
+temperature = 0.25 / 0.5 / 1.0 / 2.0 / 4.0
+```
+
+其中 `predicted` 是正式 inference 可用设置；`true` 使用真实类别标签，只能作为 oracle analysis。
+
+### Predicted 结果
+
+| Variant | Tau | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| global | - | 768 | 68.42% | 86.50% | 93.08% | 55.51% | BBox global baseline |
+| evidence_weighted | 0.25 | 768 | 70.08% | 87.08% | 93.00% | 58.57% | 温度过低，选择偏尖锐 |
+| evidence_weighted | 0.5 | 768 | 70.50% | 87.67% | 93.33% | 59.41% | 接近最优 |
+| evidence_weighted | 1.0 | 768 | 71.25% | 87.83% | 93.58% | 59.62% | 正式可用最优 mAP / Recall@1 |
+| evidence_weighted | 2.0 | 768 | 70.83% | 87.58% | 93.75% | 58.58% | Recall@10 略高，mAP 下降 |
+| evidence_weighted | 4.0 | 768 | 69.83% | 87.25% | 93.92% | 57.36% | 过平滑，接近 global |
+
+### Oracle True 结果
+
+| Variant | Tau | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| global | - | 768 | 68.42% | 86.50% | 93.08% | 55.51% | BBox global baseline |
+| evidence_weighted | 0.25 | 768 | 75.08% | 92.58% | 95.83% | 62.69% | oracle 明显强于 predicted |
+| evidence_weighted | 0.5 | 768 | 75.08% | 92.75% | 95.92% | 63.18% | oracle 最优 |
+| evidence_weighted | 1.0 | 768 | 74.33% | 91.58% | 95.92% | 62.55% | 仍显著高于 predicted |
+| evidence_weighted | 2.0 | 768 | 72.42% | 89.75% | 95.08% | 60.41% | 温度升高后下降 |
+| evidence_weighted | 4.0 | 768 | 70.17% | 88.33% | 94.33% | 58.22% | 过平滑 |
+
+### 当前结论
+
+```text
+1. predicted 设置下，tau=1.0 仍是正式可用的最佳设置：
+   Recall@1 = 71.25%，mAP = 59.62%。
+2. tau=0.5 和 tau=1.0 很接近，说明方法不是单点偶然有效。
+3. true/oracle 设置显著更强，tau=0.5 达到：
+   Recall@1 = 75.08%，Recall@5 = 92.75%，Recall@10 = 95.92%，mAP = 63.18%。
+4. predicted tau=1.0 与 oracle true tau=0.5 的差距为：
+   Recall@1 -3.83 pp，Recall@5 -4.92 pp，Recall@10 -2.34 pp，mAP -3.56 pp。
+5. 这说明 weighted local 的上界仍受分类预测质量影响。
+   如果分类 head 更准，或者 local selector 能减少错误类别引导，retrieval 还有提升空间。
+```
+
+输出文件：
+
+```text
+outputs/embeddings/swin_weighted_token_temperature_sensitivity/20260830_141148_foreground_swin_tiny_bbox224/predicted/summary.csv
+outputs/embeddings/swin_weighted_token_temperature_sensitivity/20260830_141148_foreground_swin_tiny_bbox224/true/summary.csv
+```
+
+## 实验 8.4d：Top-M Class Evidence Ensemble
+
+### 研究问题
+
+```text
+如果不只使用 top-1 predicted class，而是融合 top-M predicted classes 的 token evidence，
+能否缓解错误类别引导并缩小 predicted 与 true oracle 之间的差距？
+```
+
+### 方法
+
+本实验不训练模型。对每张图：
+
+```text
+1. 用 BBox Swin 得到 global embedding 和 logits。
+2. 从 logits 中取 top-M predicted classes。
+3. 对每个 class 分别计算 token evidence：
+   score(token_i, class_j) = token_i dot classifier_weight[class_j]
+4. 对每个 class 的 token evidence 做 softmax(score / tau)。
+5. 使用 top-M class probability 作为权重，融合多个 token weight map。
+6. 用融合后的 token weights 对 Swin final-stage tokens 做 weighted pooling。
+```
+
+对照变量：
+
+```text
+top-M = 1 / 3 / 5 / 10
+tau = 0.5 / 1.0
+```
+
+注意：`top-M=1` 应该等价于 8.4c 的 `predicted evidence_weighted`，可作为 sanity check。
+
+### 运行指令
+
+```powershell
+cd D:\code\VisionSearch-FG
+
+.\.venv\Scripts\python.exe scripts\evaluate_swin_topm_evidence_retrieval.py `
+  --config configs\foreground_swin_tiny_bbox224.yaml `
+  --checkpoint outputs\checkpoints\foreground_swin_tiny_bbox224\20260830_141148_foreground_swin_tiny_bbox224\best.pt `
+  --split train `
+  --ids-path data\processed\splits\cub_val_ids_seed42.txt `
+  --device cpu `
+  --metric cosine `
+  --top-ms 1 3 5 10 `
+  --temperatures 0.5 1.0 `
+  --output-dir outputs\embeddings\swin_topm_evidence_retrieval
+```
+
+输出位置：
+
+```text
+outputs/embeddings/swin_topm_evidence_retrieval/20260830_141148_foreground_swin_tiny_bbox224/summary.csv
+outputs/embeddings/swin_topm_evidence_retrieval/20260830_141148_foreground_swin_tiny_bbox224/<variant>/cosine/summary.json
+```
+
+### 结果表
+
+| Variant | Top-M | Tau | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| global | - | - | 768 | 68.42% | 86.50% | 93.08% | 55.51% | BBox global baseline |
+| topm1_evidence_tau0_5 | 1 | 0.5 | 768 | 70.50% | 87.67% | 93.33% | 59.41% | top-1 predicted, tau=0.5 |
+| topm1_evidence_tau1 | 1 | 1.0 | 768 | 71.25% | 87.83% | 93.58% | 59.62% | top-1 predicted 最优 mAP / Recall@1 |
+| topm3_evidence_tau0_5 | 3 | 0.5 | 768 | 70.58% | 87.83% | 93.83% | 59.22% | Recall@10 略高，但 mAP 低于 top-1 |
+| topm3_evidence_tau1 | 3 | 1.0 | 768 | 71.08% | 88.08% | 93.50% | 59.34% | Recall@5 略高，但 mAP 低于 top-1 |
+| topm5_evidence_tau0_5 | 5 | 0.5 | 768 | 70.25% | 87.83% | 93.83% | 59.18% | 引入更多类别后无收益 |
+| topm5_evidence_tau1 | 5 | 1.0 | 768 | 70.92% | 87.92% | 93.50% | 59.31% | 低于 top-1 |
+| topm10_evidence_tau0_5 | 10 | 0.5 | 768 | 70.25% | 87.92% | 94.00% | 59.17% | Recall@10 最高，但 mAP 低于 top-1 |
+| topm10_evidence_tau1 | 10 | 1.0 | 768 | 70.83% | 87.92% | 93.50% | 59.28% | 低于 top-1 |
+
+融合 global 后的结果整体不优于 local-only top-1：
+
+| Variant | Top-M | Tau | Dim | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| global_topm1_evidence_tau1_concat_l2 | 1 | 1.0 | 1536 | 70.67% | 87.92% | 94.00% | 58.31% | Recall@10 高，但 mAP 低于 local-only |
+| global_topm3_evidence_tau1_concat_l2 | 3 | 1.0 | 1536 | 70.33% | 87.42% | 93.67% | 58.12% | top-M 融合无收益 |
+| global_topm5_evidence_tau1_concat_l2 | 5 | 1.0 | 1536 | 70.25% | 87.50% | 93.50% | 58.08% | 低于 top-1 local |
+| global_topm10_evidence_tau1_concat_l2 | 10 | 1.0 | 1536 | 70.25% | 87.50% | 93.67% | 58.08% | 低于 top-1 local |
+
+### 当前结论
+
+```text
+1. Top-M class ensemble 没有缩小 predicted 与 true oracle 的差距。
+2. 正式可用最优仍然是 topm1_evidence_tau1：
+   Recall@1 = 71.25%，Recall@5 = 87.83%，Recall@10 = 93.58%，mAP = 59.62%。
+3. top-M 增大后 Recall@5 / Recall@10 有极小波动，但 mAP 没有超过 top-1。
+4. 这说明额外 predicted classes 更多是在引入类别噪声，而不是修正 top-1 selector。
+5. 后续不应继续沿 top-M ensemble 调参；更合理的是改 selector 本身，
+   例如训练一个 local selector、加入 part-aware regularization，或提升分类 head 的校准质量。
+```
+
+### 判断标准
+
+```text
+1. 如果 top-M > top-1：
+   说明 top-1 类别错误确实限制了 selector，ensemble 可以缓解。
+2. 如果 top-M <= top-1：
+   说明额外类别主要引入噪声，正式 pipeline 应保持 top-1 predicted。
+3. 如果 top-M 在 tau=0.5 更好：
+   说明更尖锐的 class-token evidence 有利。
+4. 如果 top-M 在 tau=1.0 更好：
+   说明中等平滑的局部证据更稳。
+```
+
 ## 实验 8.4：Part-aware Training
 
 ### 研究问题

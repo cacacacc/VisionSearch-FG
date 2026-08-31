@@ -16,6 +16,34 @@
 
 当前最高分类结果是 `Swin-Tiny BBox Crop 224`，Val Acc 为 80.00%。当前最高 mAP / Recall@1 检索结果是 `Swin BBox Evidence-weighted Local`，mAP 为 59.62%，Recall@1 为 71.25%；当前最高 Recall@5 / Recall@10 仍来自 `Swin Original + BBox concat PCA` 或未压缩 fusion，Recall@5 为 89.50%，Recall@10 为 94.33%。相对原图 Swin-Tiny baseline，BBox crop 的 Val Acc 从 75.50% 提升到 80.00%，提升 4.50 个百分点；class-evidence weighted local pooling 的 mAP 从 49.04% 提升到 59.62%，提升 10.58 个百分点，Recall@1 从 61.25% 提升到 71.25%，提升 10.00 个百分点。这个结果和 Phase 6 的解释性分析一致：背景参与限制了原图输入模型的细粒度识别和检索排序，而 foreground crop 与类别证据驱动的局部 token pooling 能进一步改善前排排序质量。
 
+## Oracle 诊断结果
+
+以下实验使用 CUB 人工 part coordinates，因此只作为 upper bound / diagnostic analysis，不能作为正式无标注检索 pipeline 与主结果等价比较。
+
+| 方法 | Backbone | 输入 | Feature | Recall@1 | Recall@5 | Recall@10 | mAP | 说明 |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| Swin BBox Global | Swin-Tiny | BBox crop 224 | backbone h | 68.42% | 86.50% | 93.08% | 55.51% | Oracle crop 对照中的全局 baseline |
+| Swin BBox + Oracle Head | Swin-Tiny | BBox crop 224 + CUB head crop | global_head_concat_l2 | 72.42% | 90.00% | 94.00% | 59.17% | 使用人工 head part crop；证明头部局部信息有明显上界收益 |
+| Swin BBox + Oracle Head + Wing | Swin-Tiny | BBox crop 224 + head + wing crop | global_head_wing_concat_l2 | 69.42% | 88.92% | 93.58% | 56.43% | 简单加入 wing 后低于只加 head |
+| Swin BBox + Oracle Head + Wing + Body | Swin-Tiny | BBox crop 224 + head + wing + body crop | global_head_wing_body_concat_l2 | 70.00% | 89.75% | 93.67% | 57.82% | 多局部融合有效，但维度更高且不如只加 head |
+| Swin BBox Evidence-weighted Local Oracle | Swin-Tiny | BBox crop 224 | true-class weighted local, tau=0.5 | 75.08% | 92.75% | 95.92% | 63.18% | 使用真实类别引导 token weighting；只作为 selector 上界 |
+
+该诊断结果说明：局部 part 信息确实有检索价值，但收益主要来自 `head`，不是简单堆叠越多 part 越好。`true-class weighted local` 的 oracle 结果进一步说明，当前 weighted local 的上界受类别预测质量影响；如果 selector 能减少错误类别引导，retrieval 仍有约 3.56 个百分点 mAP 的上界空间。下一步如果做真正的 part-aware training，应优先设计 head-aware 或 discriminative local selector，而不是平均处理所有部位。
+
+## 自动局部裁剪诊断
+
+以下实验不使用人工 part coordinates，只使用 Swin class-evidence token heatmap 自动生成局部 crop。
+
+| 方法 | Backbone | 输入 | Feature | Recall@1 | Recall@5 | Recall@10 | mAP | 说明 |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| Swin BBox Global | Swin-Tiny | BBox crop 224 | backbone h | 68.42% | 86.50% | 93.08% | 55.51% | 对照 baseline |
+| Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224 | token-level weighted local | 71.25% | 87.83% | 93.58% | 59.62% | soft token pooling，当前最高 mAP |
+| Swin BBox Evidence Auto Crop | Swin-Tiny | evidence heatmap hard crop | auto crop embedding | 39.75% | 65.42% | 75.17% | 27.75% | 自动硬裁剪明显失败 |
+| Swin BBox Global + Evidence Auto Crop | Swin-Tiny | BBox crop 224 + auto crop | concat_l2 | 64.08% | 85.92% | 91.67% | 50.61% | 拼接后仍低于 global baseline |
+| Swin BBox Top-M Evidence | Swin-Tiny | BBox crop 224 | top-M class evidence, M=3, tau=1.0 | 71.08% | 88.08% | 93.50% | 59.34% | Recall@5 略高，但 mAP 低于 top-1 |
+
+该结果说明：当前 class-evidence token heatmap 更适合做 soft weighting，而不适合直接转成 hard crop。硬裁剪会丢失上下文并放大错误局部区域。Top-M class ensemble 也没有超过 top-1 predicted evidence，说明额外类别主要引入噪声。因此后续 part-aware 方向应优先做 token-level local pooling、attention regularization 或 soft region aggregation，而不是 hard crop 或 top-M ensemble。
+
 ## 主要 Baseline 与 Ablation
 
 | 实验 | 方法 | Val Acc | Top-5 Acc | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
@@ -54,6 +82,6 @@ Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值�
 
 ## 当前结论
 
-当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是目前最有效的单模型优化方向。Original + BBox feature fusion 进一步把 mAP 提升到 57.52%，说明原图全局上下文和 bbox 前景细节存在互补。Fusion PCA 512-D 在 mAP 小幅提升到 57.72% 的同时把 storage 从 7.031 MiB 降到 2.344 MiB，因此当前默认 retrieval 表示应采用 `Swin Original + BBox concat PCA 512-D`。
+当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是目前最有效的单模型优化方向。Original + BBox feature fusion 进一步把 mAP 提升到 57.52%，说明原图全局上下文和 bbox 前景细节存在互补。Fusion PCA 512-D 在 mAP 小幅提升到 57.72% 的同时把 storage 从 7.031 MiB 降到 2.344 MiB，因此如果优先考虑 Recall@5 / Recall@10 与存储成本，默认 retrieval 表示应采用 `Swin Original + BBox concat PCA 512-D`。
 
-下一阶段不应只盲目换更大 backbone。Phase 6 的错误模式已经指向喙、眼睛、头部、翼部纹理等局部线索不稳定，因此更有价值的方向是 `Part-aware / Local Feature Learning`。8.2 证明 naive token norm Top-K 不够可靠；8.3 进一步证明 class-evidence weighted local pooling 能显著提高 mAP 和 Recall@1。下一步应对该特征做 qualitative retrieval report 和 part alignment，验证数值提升是否真的来自更稳定的局部判别区域。
+下一阶段不应只盲目换更大 backbone。Phase 6 的错误模式已经指向喙、眼睛、头部、翼部纹理等局部线索不稳定，因此更有价值的方向是 `Part-aware / Local Feature Learning`。8.2 证明 naive token norm Top-K 不够可靠；8.3 证明 class-evidence weighted local pooling 能显著提高 mAP 和 Recall@1；8.4a 的 oracle part crop 进一步证明 head 局部信息具有明确上界收益；8.4b 说明把 evidence heatmap 直接做 hard crop 会显著退化；8.4c 说明 `predicted tau=1.0` 是稳定的正式设置，而 `true tau=0.5` 暴露了 selector 上界；8.4d 说明 Top-M class ensemble 无法有效缩小该上界差距。下一步应把目标收窄到 head-aware / discriminative soft local selector，而不是无差别融合所有 part、直接裁剪局部图像或继续堆 top-M 类别。
