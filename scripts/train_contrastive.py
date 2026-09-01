@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from visionsearch_fg.data import (
     CUB200Dataset,
+    PKBatchSampler,
     build_classification_transform,
     build_two_view_transform,
     read_image_ids,
@@ -116,6 +117,8 @@ def main() -> None:
         num_workers=data_config["num_workers"],
         train=True,
         two_view=two_view,
+        sampling_config=data_config.get("sampling"),
+        seed=int(config["project"]["seed"]),
     )
     val_loader = build_dataloader(
         root=data_config["root"],
@@ -129,6 +132,8 @@ def main() -> None:
         num_workers=data_config["num_workers"],
         train=False,
         two_view=False,
+        sampling_config=None,
+        seed=int(config["project"]["seed"]),
     )
 
     model = build_model(model_config=model_config, pretrained=pretrained).to(device)
@@ -173,6 +178,7 @@ def main() -> None:
         "supcon_feature": supcon_feature,
         "temperature": training_config.get("temperature", 0.07),
         "two_view": two_view,
+        "sampling": data_config.get("sampling", {"strategy": "random"}),
         "selection_metric": selection_metric,
         "augmentation": data_config.get("augmentation", "rrc_hflip_colorjitter"),
         "crop_mode": data_config.get("crop_mode", "none"),
@@ -290,6 +296,8 @@ def build_dataloader(
     num_workers: int,
     train: bool,
     two_view: bool,
+    sampling_config: dict | None,
+    seed: int,
 ) -> DataLoader:
     image_ids = read_image_ids(image_ids_path) if image_ids_path is not None else None
     transform = (
@@ -309,6 +317,32 @@ def build_dataloader(
         bbox_margin=bbox_margin,
         transform=transform,
     )
+    if train and sampling_config is not None and sampling_config.get("strategy") == "pk":
+        classes_per_batch = int(sampling_config["classes_per_batch"])
+        samples_per_class = int(sampling_config["samples_per_class"])
+        expected_batch_size = classes_per_batch * samples_per_class
+        if batch_size != expected_batch_size:
+            raise ValueError(
+                "For sampling.strategy=pk, training.batch_size must equal "
+                "classes_per_batch * samples_per_class "
+                f"({batch_size} != {classes_per_batch} * {samples_per_class})"
+            )
+        sampler = PKBatchSampler(
+            labels=[sample.label for sample in dataset.samples],
+            classes_per_batch=classes_per_batch,
+            samples_per_class=samples_per_class,
+            seed=seed,
+        )
+        return DataLoader(
+            dataset,
+            batch_sampler=sampler,
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available(),
+        )
+
+    if sampling_config is not None and sampling_config.get("strategy", "random") != "random":
+        raise ValueError(f"Unsupported sampling strategy: {sampling_config.get('strategy')}")
+
     return DataLoader(
         dataset,
         batch_size=batch_size,
