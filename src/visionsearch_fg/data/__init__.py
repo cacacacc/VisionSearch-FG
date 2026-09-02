@@ -1,6 +1,7 @@
 """Dataset loading and preprocessing utilities."""
 
 from visionsearch_fg.data.cub import CUB200Dataset, CUBSample, crop_image_to_bbox
+from visionsearch_fg.data.samplers import PKBatchSampler
 from visionsearch_fg.data.splits import (
     read_image_ids,
     stratified_train_val_split,
@@ -16,6 +17,7 @@ from visionsearch_fg.data.transforms import (
 __all__ = [
     "CUB200Dataset",
     "CUBSample",
+    "PKBatchSampler",
     "crop_image_to_bbox",
     "TwoViewTransform",
     "build_classification_transform",
