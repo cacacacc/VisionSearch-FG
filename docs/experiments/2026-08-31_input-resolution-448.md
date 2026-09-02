@@ -62,10 +62,10 @@ $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 
 .\.venv\Scripts\python.exe scripts\train_baseline.py `
   --config configs\baseline_swin_tiny_448.yaml `
-  --device cpu
+  --device cuda
 ```
 
-如果 CPU 太慢或内存不足，使用较小 batch：
+如果 CUDA 显存不足，使用较小 batch：
 
 ```powershell
 cd D:\code\VisionSearch-FG
@@ -73,7 +73,7 @@ $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 
 .\.venv\Scripts\python.exe scripts\train_baseline.py `
   --config configs\baseline_swin_tiny_448.yaml `
-  --device cpu `
+  --device cuda `
   --batch-size 4
 ```
 
@@ -85,10 +85,10 @@ $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 
 .\.venv\Scripts\python.exe scripts\train_baseline.py `
   --config configs\foreground_swin_tiny_bbox448.yaml `
-  --device cpu
+  --device cuda
 ```
 
-如果 CPU 太慢或内存不足，使用较小 batch：
+如果 CUDA 显存不足，使用较小 batch：
 
 ```powershell
 cd D:\code\VisionSearch-FG
@@ -96,7 +96,7 @@ $env:TORCH_HOME='D:\code\VisionSearch-FG\.torch_cache'
 
 .\.venv\Scripts\python.exe scripts\train_baseline.py `
   --config configs\foreground_swin_tiny_bbox448.yaml `
-  --device cpu `
+  --device cuda `
   --batch-size 4
 ```
 
@@ -144,15 +144,91 @@ $run = Get-ChildItem outputs\checkpoints\foreground_swin_tiny_bbox448 | Sort-Obj
 | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Swin Original 224 | `20260823_012929_baseline_swin_tiny_protocol` | 224 | none | 8 | 4 | 75.50% | 75.28% | 93.42% | 61.25% | 84.33% | 90.67% | 49.04% |
 | Swin BBox 224 | `20260830_141148_foreground_swin_tiny_bbox224` | 224 | bbox | 8 | 6 | 80.00% | 79.52% | 94.92% | 68.42% | 86.50% | 93.08% | 55.51% |
-| Swin Original 448 | 待运行 | 448 | none | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
-| Swin BBox 448 | 待运行 | 448 | bbox | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
+| Swin Original 448 | `20260831_084639_baseline_swin_tiny_448` | 448 | none | 8 | 8 | 78.83% | 78.37% | 95.08% | 67.08% | 88.17% | 93.58% | 53.92% |
+| Swin BBox 448 | `20260831_090913_foreground_swin_tiny_bbox448` | 448 | bbox | 8 | 7 | 81.33% | 81.05% | 95.42% | 70.58% | 89.75% | 93.67% | 58.97% |
 
-## 预期解释
+当前本地已找到两个 448 设置的 retrieval evaluation 输出：
 
-如果 `Original 448` 明显优于 `Original 224`，说明单纯提高分辨率能帮助模型看到更多细节。
+```text
+outputs/embeddings/resolution_448/20260831_084639_baseline_swin_tiny_448/cosine/summary.json
+outputs/embeddings/resolution_448/20260831_090913_foreground_swin_tiny_bbox448/cosine/summary.json
+```
 
-如果 `BBox 448` 明显优于 `BBox 224`，说明在去除大量背景后，额外像素确实被用于鸟主体细节。
+## 训练阶段详细结果
 
-如果 `Original 448` 提升有限，而 `BBox 448` 提升明显，说明像素预算需要先集中到鸟主体上，高分辨率才有稳定收益。
+| 方法 | Run ID | Best Epoch | Val Acc | Macro-F1 | Top-5 Acc | Epochs Ran | Train Time | Params |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Swin Original 448 | `20260831_084639_baseline_swin_tiny_448` | 8 | 78.83% | 78.37% | 95.08% | 12 | 22.26 min | 27,673,154 |
+| Swin BBox 448 | `20260831_090913_foreground_swin_tiny_bbox448` | 7 | 81.33% | 81.05% | 95.42% | 12 | 22.18 min | 27,673,154 |
 
-如果 `BBox 448` 分类提升但 retrieval 不提升，说明更高分辨率改善了分类判别，但 embedding 排序结构仍需要 SupCon、ArcFace 或 local-token metric learning 进一步约束。
+## 结果分析
+
+从分类结果看，`Original 448` 明显优于 `Original 224`：
+
+```text
+Val Acc: 75.50% -> 78.83%  (+3.33 percentage points)
+Macro-F1: 75.28% -> 78.37% (+3.09 percentage points)
+Top-5 Acc: 93.42% -> 95.08% (+1.66 percentage points)
+Recall@1: 61.25% -> 67.08% (+5.83 percentage points)
+Recall@5: 84.33% -> 88.17% (+3.84 percentage points)
+Recall@10: 90.67% -> 93.58% (+2.91 percentage points)
+mAP: 49.04% -> 53.92% (+4.88 percentage points)
+```
+
+这说明单纯提高输入分辨率确实能帮助 Swin-Tiny 捕捉更多细粒度视觉信息，而且收益不仅体现在分类 Accuracy，也体现在 retrieval ranking structure。
+
+`BBox 448` 进一步优于 `BBox 224`：
+
+```text
+Val Acc: 80.00% -> 81.33%  (+1.33 percentage points)
+Macro-F1: 79.52% -> 81.05% (+1.53 percentage points)
+Top-5 Acc: 94.92% -> 95.42% (+0.50 percentage points)
+Recall@1: 68.42% -> 70.58% (+2.16 percentage points)
+Recall@5: 86.50% -> 89.75% (+3.25 percentage points)
+Recall@10: 93.08% -> 93.67% (+0.59 percentage points)
+mAP: 55.51% -> 58.97% (+3.46 percentage points)
+```
+
+这说明在 foreground-aware crop 已经减少背景干扰后，提高 resolution 仍然能带来额外收益。换句话说，BBox crop 和 high resolution 存在正向叠加效果。
+
+`BBox 448` 的 retrieval embedding 维度为 768，在 1200 张验证样本上的 float32 存储约为 3.52 MiB，cosine brute-force 查询延迟约为 0.054 ms/query。这个规模下检索开销仍然很低，因此 448 分辨率带来的主要成本集中在训练和特征提取阶段，而不是后续向量检索阶段。
+
+`BBox 448` 相比 `Original 448` 也有明显分类优势：
+
+```text
+Val Acc: 78.83% -> 81.33% (+2.50 percentage points)
+Macro-F1: 78.37% -> 81.05% (+2.68 percentage points)
+Recall@1: 67.08% -> 70.58% (+3.50 percentage points)
+Recall@5: 88.17% -> 89.75% (+1.58 percentage points)
+Recall@10: 93.58% -> 93.67% (+0.09 percentage points)
+mAP: 53.92% -> 58.97% (+5.05 percentage points)
+```
+
+这说明即使在 448 高分辨率下，去除背景并把像素预算集中到鸟主体上仍然重要。
+
+```text
+Resolution 提升分类性能。
+Resolution 同时提升 retrieval 表征质量。
+BBox crop + 448 继续提升分类和 retrieval。
+Foreground + Detail 的组合优于单独使用 foreground 224。
+```
+
+## 当前结论
+
+当前最强设置是：
+
+```text
+Swin-Tiny + BBox crop + 448 input
+```
+
+它达到：
+
+```text
+Accuracy = 81.33%
+Recall@1 = 70.58%
+Recall@5 = 89.75%
+Recall@10 = 93.67%
+mAP = 58.97%
+```
+
+这是目前项目中非常强的 foreground + high-resolution baseline。完整结果说明：提高输入分辨率可以增强细粒度分类和检索表征；在此基础上加入 BBox crop 后，模型进一步减少背景干扰，把更多像素预算用于鸟类主体和局部判别区域。

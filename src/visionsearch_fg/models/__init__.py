@@ -1,5 +1,10 @@
 """Backbones, classification heads, and embedding models."""
 
+from visionsearch_fg.models.contrastive import (
+    ContrastiveClassifier,
+    ContrastiveOutput,
+    build_contrastive_classifier,
+)
 from visionsearch_fg.models.resnet import (
     FineTuneMode,
     ModelOutput,
@@ -12,11 +17,7 @@ from visionsearch_fg.models.swin_head_selector import (
     SwinHeadAwareClassifier,
     build_swin_head_aware_classifier,
 )
-from visionsearch_fg.models.contrastive import (
-    ContrastiveClassifier,
-    ContrastiveOutput,
-    build_contrastive_classifier,
-)
+from visionsearch_fg.models.timm_classifier import TimmClassifier, build_timm_classifier
 
 __all__ = [
     "ContrastiveClassifier",
@@ -27,8 +28,10 @@ __all__ = [
     "ResNet18Classifier",
     "SwinHeadAwareClassifier",
     "SwinTinyClassifier",
+    "TimmClassifier",
     "build_contrastive_classifier",
     "build_resnet18_classifier",
     "build_swin_head_aware_classifier",
     "build_swin_tiny_classifier",
+    "build_timm_classifier",
 ]

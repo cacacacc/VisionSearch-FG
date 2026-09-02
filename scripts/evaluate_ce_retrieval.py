@@ -21,6 +21,7 @@ from visionsearch_fg.models import (
     build_contrastive_classifier,
     build_resnet18_classifier,
     build_swin_tiny_classifier,
+    build_timm_classifier,
 )
 from visionsearch_fg.retrieval import (
     cosine_similarity_matrix,
@@ -267,14 +268,38 @@ def build_model(model_config: dict, feature: str) -> torch.nn.Module:
             )
         return classifier
     if backbone in {"swin_tiny", "swin_t"}:
-        if feature == "projection":
-            raise ValueError("projection feature is currently supported for resnet18 only")
-        return build_swin_tiny_classifier(
+        classifier = build_swin_tiny_classifier(
             num_classes=model_config["num_classes"],
             pretrained=False,
             freeze_backbone=model_config.get("freeze_backbone", False),
             fine_tune_mode=model_config.get("fine_tune_mode"),
         )
+        if feature == "projection":
+            return build_contrastive_classifier(
+                classifier=classifier,
+                projection_head=model_config.get("projection_head", "mlp"),
+                projection_dim=model_config.get("projection_dim", 128),
+                projection_hidden_dim=model_config.get("projection_hidden_dim"),
+            )
+        return classifier
+    if backbone.startswith("timm:"):
+        classifier = build_timm_classifier(
+            model_name=backbone.removeprefix("timm:"),
+            num_classes=model_config["num_classes"],
+            pretrained=False,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+            trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
+            model_kwargs=model_config.get("timm_kwargs"),
+        )
+        if feature == "projection":
+            return build_contrastive_classifier(
+                classifier=classifier,
+                projection_head=model_config.get("projection_head", "mlp"),
+                projection_dim=model_config.get("projection_dim", 128),
+                projection_hidden_dim=model_config.get("projection_hidden_dim"),
+            )
+        return classifier
     raise ValueError(f"Unsupported backbone: {backbone}")
 
 

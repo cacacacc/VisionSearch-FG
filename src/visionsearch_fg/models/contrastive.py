@@ -5,8 +5,6 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from visionsearch_fg.models.resnet import ResNet18Classifier
-
 
 @dataclass(frozen=True)
 class ContrastiveOutput:
@@ -20,7 +18,7 @@ class ContrastiveClassifier(nn.Module):
 
     def __init__(
         self,
-        classifier: ResNet18Classifier,
+        classifier: nn.Module,
         projection_head: str = "mlp",
         projection_dim: int = 128,
         projection_hidden_dim: int | None = None,
@@ -53,6 +51,10 @@ class ContrastiveClassifier(nn.Module):
 
     def forward(self, images: torch.Tensor) -> ContrastiveOutput:
         embedding = self.backbone(images)
+        if embedding.ndim == 4:
+            embedding = embedding.mean(dim=(-2, -1))
+        elif embedding.ndim > 2:
+            embedding = torch.flatten(embedding, start_dim=1)
         logits = self.classifier(embedding)
         projection = self.projection_head(embedding)
         return ContrastiveOutput(
@@ -63,7 +65,7 @@ class ContrastiveClassifier(nn.Module):
 
 
 def build_contrastive_classifier(
-    classifier: ResNet18Classifier,
+    classifier: nn.Module,
     projection_head: str = "mlp",
     projection_dim: int = 128,
     projection_hidden_dim: int | None = None,

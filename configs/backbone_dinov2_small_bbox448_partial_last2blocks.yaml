@@ -1,0 +1,65 @@
+project:
+  name: VisionSearch-FG
+  phase: phase11_self_supervised_backbone
+  seed: 42
+
+experiment:
+  name: backbone_dinov2_small_bbox448_partial_last2blocks
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 448
+  augmentation: hflip
+  crop_mode: bbox
+  bbox_margin: 0.15
+  num_workers: 2
+  train_split: train
+  val_split: train
+  train_ids_path: data/processed/splits/cub_train_ids_seed42.txt
+  val_ids_path: data/processed/splits/cub_val_ids_seed42.txt
+
+model:
+  backbone: timm:vit_small_patch14_dinov2.lvd142m
+  timm_kwargs:
+    img_size: 448
+    global_pool: token
+  pretrained: true
+  freeze_backbone: false
+  fine_tune_mode: partial
+  trainable_backbone_layers:
+    - blocks.10
+    - blocks.11
+    - norm
+  embedding_dim: 384
+  num_classes: 200
+
+training:
+  epochs: 30
+  batch_size: 8
+  optimizer: adamw
+  learning_rate: 0.0001
+  backbone_learning_rate: 0.000005
+  classifier_learning_rate: 0.0005
+  weight_decay: 0.0001
+  early_stopping_patience: 5
+
+runtime:
+  max_train_batches:
+  max_val_batches:
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+    - top5_accuracy
+    - recall@1
+    - recall@5
+    - recall@10
+    - mAP
+    - parameter_count
+    - training_time
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs

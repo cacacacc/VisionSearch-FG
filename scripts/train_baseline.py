@@ -19,7 +19,11 @@ from torch.utils.data import DataLoader
 
 from visionsearch_fg.data import CUB200Dataset, build_classification_transform, read_image_ids
 from visionsearch_fg.engine import train_one_epoch, validate
-from visionsearch_fg.models import build_resnet18_classifier, build_swin_tiny_classifier
+from visionsearch_fg.models import (
+    build_resnet18_classifier,
+    build_swin_tiny_classifier,
+    build_timm_classifier,
+)
 from visionsearch_fg.utils import load_yaml_config
 
 
@@ -339,6 +343,16 @@ def build_model(
             pretrained=pretrained,
             freeze_backbone=freeze_backbone,
             fine_tune_mode=fine_tune_mode,
+        )
+    if backbone.startswith("timm:"):
+        return build_timm_classifier(
+            model_name=backbone.removeprefix("timm:"),
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=freeze_backbone,
+            fine_tune_mode=fine_tune_mode,
+            trainable_backbone_layers=trainable_backbone_layers,
+            model_kwargs=model_config.get("timm_kwargs"),
         )
     raise ValueError(f"Unsupported backbone: {backbone}")
 
