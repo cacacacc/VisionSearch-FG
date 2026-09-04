@@ -1,0 +1,58 @@
+project:
+  name: VisionSearch-FG
+  phase: phase10_backbone_scaling
+  seed: 42
+
+experiment:
+  name: backbone_resnet18_bbox448
+
+data:
+  dataset: CUB-200-2011
+  root: data/raw/CUB_200_2011
+  image_size: 448
+  augmentation: hflip
+  crop_mode: bbox
+  bbox_margin: 0.15
+  num_workers: 2
+  train_split: train
+  val_split: train
+  train_ids_path: data/processed/splits/cub_train_ids_seed42.txt
+  val_ids_path: data/processed/splits/cub_val_ids_seed42.txt
+
+model:
+  backbone: resnet18
+  pretrained: true
+  freeze_backbone: false
+  fine_tune_mode: full
+  embedding_dim: 512
+  num_classes: 200
+
+training:
+  epochs: 30
+  batch_size: 8
+  optimizer: adamw
+  learning_rate: 0.0001
+  backbone_learning_rate: 0.00005
+  classifier_learning_rate: 0.0005
+  weight_decay: 0.0001
+  early_stopping_patience: 5
+
+runtime:
+  max_train_batches:
+  max_val_batches:
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+    - top5_accuracy
+    - recall@1
+    - recall@5
+    - recall@10
+    - mAP
+    - parameter_count
+    - training_time
+
+outputs:
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs

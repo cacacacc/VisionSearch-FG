@@ -29,7 +29,12 @@ from visionsearch_fg.data import (
 from visionsearch_fg.engine import validate
 from visionsearch_fg.engine.metrics import accuracy
 from visionsearch_fg.losses import SupConLoss
-from visionsearch_fg.models import build_contrastive_classifier, build_resnet18_classifier
+from visionsearch_fg.models import (
+    build_contrastive_classifier,
+    build_resnet18_classifier,
+    build_swin_tiny_classifier,
+    build_timm_classifier,
+)
 from visionsearch_fg.utils import load_yaml_config
 
 
@@ -354,16 +359,33 @@ def build_dataloader(
 
 def build_model(model_config: dict, pretrained: bool) -> nn.Module:
     backbone = model_config.get("backbone", "resnet18")
-    if backbone != "resnet18":
-        raise ValueError("Phase 5 contrastive training currently supports resnet18 only")
-
-    classifier = build_resnet18_classifier(
-        num_classes=model_config["num_classes"],
-        pretrained=pretrained,
-        freeze_backbone=model_config.get("freeze_backbone", False),
-        fine_tune_mode=model_config.get("fine_tune_mode"),
-        trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
-    )
+    if backbone == "resnet18":
+        classifier = build_resnet18_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+            trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
+        )
+    elif backbone in {"swin_tiny", "swin_t"}:
+        classifier = build_swin_tiny_classifier(
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+        )
+    elif backbone.startswith("timm:"):
+        classifier = build_timm_classifier(
+            model_name=backbone.removeprefix("timm:"),
+            num_classes=model_config["num_classes"],
+            pretrained=pretrained,
+            freeze_backbone=model_config.get("freeze_backbone", False),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+            trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
+            model_kwargs=model_config.get("timm_kwargs"),
+        )
+    else:
+        raise ValueError(f"Unsupported backbone: {backbone}")
     return build_contrastive_classifier(
         classifier=classifier,
         projection_dim=model_config.get("projection_dim", 128),
@@ -408,13 +430,19 @@ def train_one_epoch_contrastive(
 
         optimizer.zero_grad(set_to_none=True)
         output = model(model_images)
-        ce_loss = ce_criterion(output.logits, ce_labels) if ce_weight > 0 else zero_like_loss(output.logits)
+        ce_loss = (
+            ce_criterion(output.logits, ce_labels)
+            if ce_weight > 0
+            else zero_like_loss(output.logits)
+        )
 
         if supcon_weight > 0:
             if supcon_features is None:
                 raise ValueError("SupCon loss requires two views in the training batch")
             batch_size = labels.shape[0]
-            supcon_output = output.projection if supcon_feature == "projection" else output.embedding
+            supcon_output = (
+                output.projection if supcon_feature == "projection" else output.embedding
+            )
             projections = torch.stack(
                 [supcon_output[:batch_size], supcon_output[batch_size:]],
                 dim=1,
