@@ -14,8 +14,20 @@
 | Swin Original + BBox concat PCA | Swin-Tiny | 原图 224 + BBox crop 224 | CE | PCA 512-D | 80.00% | 79.52% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | 当前最强 retrieval，且存储低于 1536-D fusion |
 | Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224, margin=0.15 | CE | class-evidence weighted local | 80.00% | 79.52% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | 当前最高 mAP / Recall@1；不重新训练 |
 | Swin Head-aware Soft Selector | Swin-Tiny | BBox crop 224, margin=0.15 | CE + head selector | global+learned local | 82.83% | 82.55% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | 当前最高分类；retrieval 未超过 evidence-weighted local |
+| Swin-Tiny BBox Crop 448 | Swin-Tiny | BBox crop 448, margin=0.15 | CE | backbone h | 81.33% | 81.05% | 95.42% | 70.58% | 89.75% | 93.67% | 58.97% | 提高分辨率后分类提升，但 mAP 仍低于 evidence-weighted local |
+| ConvNeXt V2 Nano BBox 448 | ConvNeXt V2 Nano | BBox crop 448, margin=0.15 | CE | backbone h | 87.00% | 86.72% | 97.08% | 78.42% | 93.00% | 96.33% | 68.55% | 更强 CNN backbone 明显提升 |
+| ConvNeXt V2 Tiny BBox 448 | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE | backbone h | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 当前整体检索最强 |
+| DINOv2 Base Frozen BBox 448 | DINOv2 Base | BBox crop 448, margin=0.15 | frozen CE | backbone h | 89.25% | 89.06% | 98.17% | 78.00% | 93.33% | 96.75% | 68.02% | 当前分类最强 |
+| DINOv2 Small Partial BBox 448 | DINOv2 Small | BBox crop 448, margin=0.15 | partial CE | backbone h | 87.25% | 86.99% | 97.42% | 79.75% | 94.67% | 97.67% | 70.48% | DINOv2 内部检索最强 |
+| ConvNeXt V2 Tiny BBox 448 + SupCon | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE + SupCon | backbone h | 84.25% | 83.96% | 96.17% | 79.50% | 93.25% | 96.50% | 72.02% | 强 backbone 上 SupCon 未超过 CE baseline |
+| DINOv2 Small Partial BBox 448 + SupCon | DINOv2 Small | BBox crop 448, margin=0.15 | CE + SupCon | backbone h | 86.25% | 85.91% | 96.58% | 79.83% | 94.42% | 97.42% | 70.54% | mAP 与 CE baseline 基本持平 |
+| ConvNeXt V2 Tiny BBox 448 + Flip TTA | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.67% | 94.42% | 97.25% | 75.74% | 稳定后处理，Recall@5/10 和 mAP 均提升 |
+| ConvNeXt V2 Tiny BBox 448 + QE | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.67% | 93.25% | 96.17% | 75.82% | 单独 Query Expansion 最强，top3 alpha0.5 |
+| ConvNeXt V2 Tiny BBox 448 + Flip TTA + QE | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | 当前整体 mAP 最强，TTA + Query Expansion top3 alpha0.5 |
 
-当前最高分类结果是 `Swin Head-aware Soft Selector`，Val Acc 为 82.83%，Macro-F1 为 82.55%。当前最高 mAP / Recall@1 检索结果仍是 `Swin BBox Evidence-weighted Local`，mAP 为 59.62%，Recall@1 为 71.25%；当前最高 Recall@5 / Recall@10 仍来自 `Swin Original + BBox concat PCA` 或未压缩 fusion，Recall@5 为 89.50%，Recall@10 为 94.33%。相对原图 Swin-Tiny baseline，BBox crop 的 Val Acc 从 75.50% 提升到 80.00%，提升 4.50 个百分点；head-aware selector 进一步把分类 Val Acc 提升到 82.83%。但 head-aware selector 的 retrieval mAP 只有 55.71%，说明分类性能提升不必然带来更好的检索 embedding。class-evidence weighted local pooling 的 mAP 从 49.04% 提升到 59.62%，Recall@1 从 61.25% 提升到 71.25%，仍是当前最强检索方案。
+当前最高分类结果是 `DINOv2 Base Frozen BBox 448`，Val Acc 为 89.25%，Macro-F1 为 89.06%。当前最高 mAP 检索结果是 `ConvNeXt V2 Tiny BBox 448 + Flip TTA + Query Expansion top3 alpha0.5`，mAP 为 76.82%；当前最高 Recall@1 是 `ConvNeXt V2 Tiny BBox 448 + Flip TTA + Query Expansion top3 alpha0.2`，Recall@1 为 83.17%。这说明强 backbone、BBox crop 和高分辨率输入带来的收益明显超过早期的 post-hoc local feature 优化，而 TTA + Query Expansion 可以进一步改善完整排序质量。
+
+同时，`DINOv2 Base Frozen` 的分类最强但 mAP 只有 68.02%，低于 ConvNeXt V2 Tiny；`DINOv2 Small Partial` 的 mAP 提升到 70.48%，但仍没有超过 ConvNeXt V2 Tiny。这进一步说明分类性能和 retrieval representation quality 相关但不等价。Phase 12 中，强 backbone 上的 CE + SupCon 没有稳定超过 CE baseline，因此后续检索优化不应继续简单增加 SupCon 权重，而应转向 sampler、hard negative mining、memory bank 或 part-aware local retrieval。
 
 ## Oracle 诊断结果
 
@@ -82,8 +94,31 @@
 
 Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值；projection head 是有效结构；temperature 对 retrieval geometry 影响明显。若继续优化 SupCon，应优先改 batch 采样策略，例如 class-balanced sampler，而不是继续盲目增大 `lambda`。
 
+## Phase 10-12：高分辨率、强 Backbone 与强 Backbone SupCon
+
+| 实验 | 方法 | Val Acc | Macro-F1 | Top-5 Acc | Recall@1 | Recall@5 | Recall@10 | mAP | 结论 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Resolution | Swin Original 448 | 78.83% | 78.37% | 95.08% | 67.08% | 88.17% | 93.58% | 53.92% | 纯提高分辨率有效，但不如 BBox 448 |
+| Resolution | Swin BBox 448 | 81.33% | 81.05% | 95.42% | 70.58% | 89.75% | 93.67% | 58.97% | Foreground + detail 更有效 |
+| Backbone | ConvNeXt V2 Nano BBox 448 | 87.00% | 86.72% | 97.08% | 78.42% | 93.00% | 96.33% | 68.55% | 小模型也强于 Swin |
+| Backbone | ConvNeXt V2 Tiny BBox 448 | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 当前整体检索最强 |
+| Backbone | Swin-Small BBox 448 | 86.50% | 86.07% | 97.25% | 81.92% | 94.75% | 96.75% | 72.82% | 参数更多，检索强但不如 ConvNeXt V2 Tiny |
+| DINOv2 | DINOv2 Small Frozen | 87.42% | 87.39% | 97.75% | 75.67% | 93.67% | 96.58% | 63.33% | frozen representation 分类强，检索一般 |
+| DINOv2 | DINOv2 Base Frozen | 89.25% | 89.06% | 98.17% | 78.00% | 93.33% | 96.75% | 68.02% | 当前分类最强 |
+| DINOv2 | DINOv2 Small Full FT | 77.25% | 76.84% | 94.67% | 70.08% | 89.08% | 94.17% | 56.38% | 全量 fine-tuning 破坏 representation |
+| DINOv2 | DINOv2 Small Partial Last 2 Blocks | 87.25% | 86.99% | 97.42% | 79.75% | 94.67% | 97.67% | 70.48% | DINOv2 内部检索最强 |
+| Strong Backbone SupCon | ConvNeXt V2 Tiny CE + SupCon | 84.25% | 83.96% | 96.17% | 79.50% | 93.25% | 96.50% | 72.02% | 低于 ConvNeXt CE baseline |
+| Strong Backbone SupCon | DINOv2 Small Partial CE + SupCon | 86.25% | 85.91% | 96.58% | 79.83% | 94.42% | 97.42% | 70.54% | 与 DINOv2 CE baseline 基本持平 |
+| Retrieval Post-processing | ConvNeXt V2 Tiny BBox + Flip TTA | 86.42% | 85.74% | 97.33% | 82.67% | 94.42% | 97.25% | 75.74% | 稳定提升 Recall@5/10 和 mAP |
+| Retrieval Post-processing | ConvNeXt V2 Tiny QE top3 alpha0.5 | 86.42% | 85.74% | 97.33% | 82.67% | 93.25% | 96.17% | 75.82% | 单独 Query Expansion 最强 |
+| Retrieval Post-processing | ConvNeXt V2 Tiny BBox + Flip TTA + QE top3 alpha0.5 | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | 当前整体 mAP 最强 |
+
+Phase 10-12 的关键结论是：`BBox crop + 448 input + stronger backbone` 是当前最有效提升路径。ConvNeXt V2 Tiny 的 CE embedding 已经形成很强的 retrieval geometry，简单加入 SupCon 没有进一步提升。DINOv2 的 frozen linear classification 很强，但 retrieval ranking 不如 ConvNeXt；小范围 partial fine-tuning 可以显著提升 DINOv2 retrieval，但仍没有超过 ConvNeXt V2 Tiny。
+
+Phase 13 的 BBox + Flip TTA 将 mAP 从 `75.06%` 提升到 `75.74%`，并同时提升 Recall@5/10，是更稳定的默认后处理。进一步叠加 Query Expansion top3 alpha0.5 后，mAP 提升到 `76.82%`，成为当前整体最强 retrieval 结果。后处理有效，但收益幅度小于 backbone、resolution 和 foreground-aware input。
+
 ## 当前结论
 
-当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是目前最有效的单模型优化方向。Original + BBox feature fusion 进一步把 mAP 提升到 57.52%，说明原图全局上下文和 bbox 前景细节存在互补。Fusion PCA 512-D 在 mAP 小幅提升到 57.72% 的同时把 storage 从 7.031 MiB 降到 2.344 MiB，因此如果优先考虑 Recall@5 / Recall@10 与存储成本，默认 retrieval 表示应采用 `Swin Original + BBox concat PCA 512-D`。
+当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是早期最有效的单模型优化方向。继续提高到 BBox crop 448 后，Swin-Tiny 的 mAP 达到 58.97%。再换成 ConvNeXt V2 Tiny 后，mAP 提升到 75.06%。最后通过 BBox + Flip TTA + Query Expansion，mAP 提升到 76.82%，成为当前整体检索最强结果。
 
-下一阶段不应只盲目换更大 backbone。Phase 6 的错误模式已经指向喙、眼睛、头部、翼部纹理等局部线索不稳定，因此更有价值的方向是 `Part-aware / Local Feature Learning`。8.2 证明 naive token norm Top-K 不够可靠；8.3 证明 class-evidence weighted local pooling 能显著提高 mAP 和 Recall@1；8.4a 的 oracle part crop 进一步证明 head 局部信息具有明确上界收益；8.4b 说明把 evidence heatmap 直接做 hard crop 会显著退化；8.4c 说明 `predicted tau=1.0` 是稳定的正式设置，而 `true tau=0.5` 暴露了 selector 上界；8.4d 说明 Top-M class ensemble 无法有效缩小该上界差距；8.5 说明 head-aware selector 能提升分类，但仅靠 CE + head selector BCE 不能改善 retrieval geometry。下一步如果目标是检索，应加入 SupCon / metric learning，而不是只做 head localization。
+下一阶段不应继续盲目换更大 backbone，也不应简单增加 SupCon 权重。Phase 12 表明，在强 backbone 上直接加入 CE + SupCon 没有超过 CE baseline。更有价值的路线是围绕 retrieval objective 本身改训练机制：class-balanced sampler / PK sampler、larger effective batch size、memory bank、hard negative mining，或者把 Phase 8 中有效的 local evidence 思路迁移到强 backbone 上，做 part-aware local retrieval。
