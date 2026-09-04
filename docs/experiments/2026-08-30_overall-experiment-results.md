@@ -70,6 +70,8 @@
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | Loss Weight | lambda=0 | 66.33% | 65.63% | 88.83% | 52.33% | 78.67% | 85.75% | 39.24% | CE-only 对照 |
 | Loss Weight | lambda=0.1 | 67.33% | 66.60% | 88.92% | 50.67% | 78.42% | 85.08% | 39.43% | 分类最优，mAP 仅小幅提升 |
+| P×K Sampling | P=8, K=2 | 67.83% | 67.17% | 89.75% | 42.08% | 71.67% | 81.08% | 35.49% | 分类略升，但 retrieval 明显低于 random baseline |
+| P×K Sampling | P=4, K=4 | 65.83% | 64.65% | 87.58% | 39.17% | 71.83% | 80.75% | 34.03% | positive 更多但 negative 类别更少，整体退化 |
 | Loss Weight | lambda=0.25 | 66.83% | 65.96% | 87.58% | 50.50% | 77.33% | 85.25% | 38.27% | 无稳定收益 |
 | Loss Weight | lambda=0.5 | 66.17% | 66.06% | 87.75% | 51.33% | 77.83% | 85.17% | 39.27% | mAP 略高但 Recall 不占优 |
 | Loss Weight | lambda=1.0 | 64.92% | 64.36% | 87.50% | 48.67% | 74.75% | 84.08% | 37.41% | SupCon 权重过大有害 |
@@ -80,7 +82,7 @@
 | Temperature | tau=0.1 | 68.00% | 67.78% | 88.33% | 43.42% | 72.42% | 82.67% | 34.89% | Phase 5 分类最优 |
 | Temperature | tau=0.2 | 66.75% | 66.80% | 88.50% | 49.08% | 74.67% | 83.33% | 38.85% | Phase 5 projection retrieval 最优 |
 
-Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值；projection head 是有效结构；temperature 对 retrieval geometry 影响明显。若继续优化 SupCon，应优先改 batch 采样策略，例如 class-balanced sampler，而不是继续盲目增大 `lambda`。
+Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值；projection head 是有效结构；temperature 对 retrieval geometry 影响明显。后续补充的 P×K sampling 显示，当前 ResNet-18 CE + SupCon 的瓶颈不只是 batch composition；P8K2 分类略升但 retrieval 明显下降，P4K4 整体退化。因此不建议继续在 ResNet-18 上扩大 P×K 搜索，应优先转向 Swin/BBox 表示上的 metric learning 或 local-token retrieval 约束。
 
 ## 当前结论
 

@@ -135,9 +135,16 @@ $run = Get-ChildItem outputs\checkpoints\phase5_resnet18_ce_supcon_pk4x4 | Sort-
 
 | 方法 | Run ID | Sampling | P | K | Val Acc | Macro-F1 | Top-5 Acc | Recall@1 | Recall@5 | Recall@10 | mAP |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| CE + SupCon random | 待填入原实验 | random | - | - | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
-| CE + SupCon P8K2 | 待运行 | pk | 8 | 2 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
-| CE + SupCon P4K4 | 待运行 | pk | 4 | 4 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
+| CE + SupCon random | `20260823_093524_phase5_resnet18_ce_supcon_lambda0_1` | random | - | - | 67.33% | 66.60% | 88.92% | 50.67% | 78.42% | 85.08% | 39.43% |
+| CE + SupCon P8K2 | `20260901_124416_phase5_resnet18_ce_supcon_pk8x2` | pk | 8 | 2 | 67.83% | 67.17% | 89.75% | 42.08% | 71.67% | 81.08% | 35.49% |
+| CE + SupCon P4K4 | `20260901_152335_phase5_resnet18_ce_supcon_pk4x4` | pk | 4 | 4 | 65.83% | 64.65% | 87.58% | 39.17% | 71.83% | 80.75% | 34.03% |
+
+训练时间记录：
+
+| 方法 | 实际设备 | 完成 epoch | Best epoch | 总训练时间 |
+| --- | --- | ---: | ---: | ---: |
+| CE + SupCon P8K2 | CPU | 14 | 9 | 2.59 h |
+| CE + SupCon P4K4 | CPU | 20 | 15 | 4.47 h |
 
 ## 预期解释
 
@@ -148,3 +155,16 @@ $run = Get-ChildItem outputs\checkpoints\phase5_resnet18_ce_supcon_pk4x4 | Sort-
 如果两者都没有提升，说明 Phase 5 的主要问题可能不只是 batch composition，而是 ResNet-18 backbone、projection dim、temperature、augmentation 强度或 CE/SupCon 权重共同限制了 retrieval geometry。
 
 如果 P×K 在 ResNet-18 上有效，下一步再迁移到更强的 Swin/BBox setting，避免直接在昂贵模型上盲目训练。
+
+## 当前结果解释
+
+P×K sampling 在当前 ResNet-18 CE + SupCon 设置下没有改善 retrieval。`P8K2` 的 Val Acc 从 random baseline 的 67.33% 小幅提高到 67.83%，但 mAP 从 39.43% 下降到 35.49%，Recall@1 从 50.67% 下降到 42.08%。`P4K4` 进一步降低了分类和检索结果。
+
+这说明当前瓶颈不只是 batch 中缺少同类样本。可能原因包括：
+
+- 每个类别训练样本较少，P×K replacement 会让部分 batch 的样本多样性不足。
+- `P4K4` 降低了 negative class 数量，使类别间分离信号变弱。
+- 当前 SupCon 作用在 128-D projection 上，但最终 retrieval geometry 仍受 ResNet backbone 表达能力限制。
+- `rrc_hflip_colorjitter` 对细粒度局部差异可能过强，和 SupCon 的拉近目标存在冲突。
+
+因此，本实验不支持继续在 ResNet-18 上扩大 P×K 搜索。下一步更合理的是把检索优化转向更强的 Swin/BBox 表示，或者在 Swin/BBox 上加入更轻量的 metric learning，而不是继续调 ResNet 的 P×K 组合。
