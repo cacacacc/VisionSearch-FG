@@ -41,9 +41,27 @@ def test_angular_margin_classifier_exposes_embedding_and_projection() -> None:
     assert output.projection.shape == (2, 5)
 
 
+def test_angular_margin_classifier_pools_4d_backbone_output() -> None:
+    base = _TinySpatialClassifier()
+    model = AngularMarginClassifier(base)
+
+    output = model(torch.randn(2, 3, 8, 8), labels=torch.tensor([0, 1]))
+
+    assert output.logits.shape == (2, 3)
+    assert output.embedding.shape == (2, 4)
+
+
 class _TinyClassifier(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.backbone = nn.Sequential(nn.Flatten(), nn.Linear(3 * 8 * 8, 4))
+        self.embedding_dim = 4
+        self.num_classes = 3
+
+
+class _TinySpatialClassifier(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.backbone = nn.Conv2d(3, 4, kernel_size=1)
         self.embedding_dim = 4
         self.num_classes = 3

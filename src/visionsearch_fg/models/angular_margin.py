@@ -8,7 +8,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-
 MarginType = Literal["arcface", "cosface"]
 
 
@@ -128,6 +127,10 @@ class AngularMarginClassifier(nn.Module):
         labels: torch.Tensor | None = None,
     ) -> AngularMarginOutput:
         embedding = self.backbone(images)
+        if embedding.ndim == 4:
+            embedding = embedding.mean(dim=(-2, -1))
+        elif embedding.ndim > 2:
+            embedding = torch.flatten(embedding, start_dim=1)
         logits = self.margin_head(embedding, labels=labels)
         projection = self.projection_head(embedding) if self.projection_head is not None else None
         return AngularMarginOutput(logits=logits, embedding=embedding, projection=projection)
