@@ -27,6 +27,23 @@ docs/global_training_protocol.md
 
 核心原则：保留 CUB official test set 只做最终评估；所有模型选择、调参和 best checkpoint 选择都基于 official train 内部分出的 validation set。
 
+## 最终测试结果
+
+当前最终模型为：
+
+```text
+ConvNeXt V2 Tiny BBox448 + ArcFace(m=0.5, scale=16)
++ BBox Flip TTA + Query Expansion(top-k=3, alpha=0.5)
+```
+
+模型选择基于 validation split，最终结果在 CUB official test set 上评估：
+
+| Recall@1 | Recall@5 | Recall@10 | mAP |
+| ---: | ---: | ---: | ---: |
+| 88.30% | 93.63% | 94.99% | 83.59% |
+
+评估设置：5,794 张测试图像，768 维 embedding，cosine metric，使用 `bbox` 与 `bbox_flip` 两个视图，并采用 QE `top-k=3, alpha=0.5`。完整结果见 [ArcFace Margin / Scale Ablation](docs/experiments/2026-09-05_arcface-margin-scale-ablation.md)；原始汇总位于 `outputs/embeddings/final_test/.../summary.json`。
+
 生成固定 train / validation / test split：
 
 ```powershell

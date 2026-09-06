@@ -2,6 +2,18 @@
 
 本文档汇总 VisionSearch-FG 当前已经完成的主要实验结果。除特别说明外，结果均来自 CUB-200-2011 official train 内部划分出的 validation split，共 1,200 张图；retrieval protocol 为 query/gallery 同用 validation split，并排除 query 自身。表中的 `BBox crop` 使用了 CUB 官方 bounding box，属于 annotation-assisted setting，不能与原图输入 baseline 解释为完全相同输入条件。
 
+## Official Test Result
+
+最终 test 只用于报告，不参与调参。最终模型为 `ConvNeXt V2 Tiny BBox448 + ArcFace(m=0.5, s=16) + BBox/BBox-Flip TTA`，checkpoint 为 `20260905_141401_foreground_convnextv2_tiny_bbox448_arcface_m0_5_s16`。
+
+| Split | 方法 | Samples | Recall@1 | Recall@5 | Recall@10 | mAP | Query Time | 说明 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Test | Flip TTA | 5,794 | 88.16% | 94.24% | 95.51% | 83.06% | 0.3057 ms/query | 不使用 Query Expansion 的保守最终结果 |
+| Test | Flip TTA + QE top3 alpha0.2 | 5,794 | 88.25% | 93.75% | 95.15% | 83.39% | 0.3057 ms/query | 较温和 QE |
+| Test | Flip TTA + QE top3 alpha0.5 | 5,794 | 88.30% | 93.63% | 94.99% | 83.59% | 0.3046 ms/query | 最终推荐 mAP 结果 |
+
+Official test 上，最终推荐结果为 `Recall@1=88.30%`，`Recall@5=93.63%`，`Recall@10=94.99%`，`mAP=83.59%`。与 validation 最优 mAP `84.21%` 相比，test mAP 略低但非常接近；test Recall@1 反而更高，说明最终 pipeline 泛化稳定。
+
 ## 主结果总表
 
 | 方法 | Backbone | 输入 | Objective | Feature | Val Acc | Macro-F1 | Top-5 Acc | Recall@1 | Recall@5 | Recall@10 | mAP | 说明 |
@@ -9,25 +21,36 @@
 | ResNet-18 Full FT + HFlip | ResNet-18 | 原图 224 | CE | backbone h | 69.67% | 未记录 | 89.33% | 58.25% | 80.75% | 87.42% | 47.76% | 主 CNN baseline |
 | Swin-Tiny Full FT + HFlip | Swin-Tiny | 原图 224 | CE | backbone h | 75.50% | 75.28% | 93.42% | 61.25% | 84.33% | 90.67% | 49.04% | 主 Transformer baseline |
 | Swin-Tiny 512-D PCA | Swin-Tiny | 原图 224 | CE | PCA 512-D | 75.50% | 75.28% | 93.42% | 61.67% | 84.75% | 90.50% | 49.22% | 同一个 Swin checkpoint 的 PCA 压缩检索结果 |
-| Swin-Tiny BBox Crop 224 | Swin-Tiny | BBox crop 224, margin=0.15 | CE | backbone h | 80.00% | 79.52% | 94.92% | 68.42% | 86.50% | 93.08% | 55.51% | 使用 CUB bbox，当前最强结果 |
+| Swin-Tiny BBox Crop 224 | Swin-Tiny | BBox crop 224, margin=0.15 | CE | backbone h | 80.00% | 79.52% | 94.92% | 68.42% | 86.50% | 93.08% | 55.51% | foreground-aware baseline |
+| Swin-Tiny BBox 224 + ArcFace | Swin-Tiny | BBox crop 224, margin=0.15 | ArcFace | backbone h | 84.92% | 84.50% | 95.17% | 82.33% | 91.58% | 95.17% | 77.30% | angular margin 明显改善 cosine retrieval |
+| Swin-Tiny BBox 224 + ArcFace + Flip TTA | Swin-Tiny | BBox crop 224 + flip TTA | ArcFace + post-processing | backbone h | 84.92% | 84.50% | 95.17% | 82.67% | 91.33% | 95.50% | 77.71% | ArcFace embedding 进一步受益于 TTA |
+| Swin-Tiny BBox 224 + ArcFace + Flip TTA + QE | Swin-Tiny | BBox crop 224 + flip TTA | ArcFace + post-processing | backbone h | 84.92% | 84.50% | 95.17% | 83.00% | 90.33% | 94.25% | 78.62% | Swin-Tiny ArcFace 后处理最强，QE top3 alpha0.5 |
+| Swin-Tiny BBox 224 + ArcFace + SupCon | Swin-Tiny | BBox crop 224, margin=0.15 | ArcFace + SupCon | backbone h | 84.50% | 84.29% | 94.67% | 79.58% | 91.33% | 95.92% | 73.20% | 低于单独 ArcFace，说明直接叠加 SupCon 不稳定 |
+| Swin-Tiny BBox 224 + CosFace | Swin-Tiny | BBox crop 224, margin=0.15 | CosFace | backbone h | 84.33% | 83.98% | 93.92% | 80.25% | 91.08% | 94.67% | 74.46% | 明显优于 CE，但低于 ArcFace |
 | Swin Original + BBox concat | Swin-Tiny | 原图 224 + BBox crop 224 | CE | concat L2 backbone h | 80.00% | 79.52% | 94.92% | 69.75% | 89.42% | 94.33% | 57.52% | 未压缩 fusion retrieval 对照；分类指标沿用 BBox crop 模型 |
-| Swin Original + BBox concat PCA | Swin-Tiny | 原图 224 + BBox crop 224 | CE | PCA 512-D | 80.00% | 79.52% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | 当前最强 retrieval，且存储低于 1536-D fusion |
-| Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224, margin=0.15 | CE | class-evidence weighted local | 80.00% | 79.52% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | 当前最高 mAP / Recall@1；不重新训练 |
-| Swin Head-aware Soft Selector | Swin-Tiny | BBox crop 224, margin=0.15 | CE + head selector | global+learned local | 82.83% | 82.55% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | 当前最高分类；retrieval 未超过 evidence-weighted local |
+| Swin Original + BBox concat PCA | Swin-Tiny | 原图 224 + BBox crop 224 | CE | PCA 512-D | 80.00% | 79.52% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | fusion 阶段最强 retrieval，且存储低于 1536-D fusion |
+| Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224, margin=0.15 | CE | class-evidence weighted local | 80.00% | 79.52% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | part-aware post-hoc 阶段最高 mAP / Recall@1；不重新训练 |
+| Swin Head-aware Soft Selector | Swin-Tiny | BBox crop 224, margin=0.15 | CE + head selector | global+learned local | 82.83% | 82.55% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | part-aware training 阶段分类最高；retrieval 未超过 evidence-weighted local |
 | Swin-Tiny BBox Crop 448 | Swin-Tiny | BBox crop 448, margin=0.15 | CE | backbone h | 81.33% | 81.05% | 95.42% | 70.58% | 89.75% | 93.67% | 58.97% | 提高分辨率后分类提升，但 mAP 仍低于 evidence-weighted local |
 | ConvNeXt V2 Nano BBox 448 | ConvNeXt V2 Nano | BBox crop 448, margin=0.15 | CE | backbone h | 87.00% | 86.72% | 97.08% | 78.42% | 93.00% | 96.33% | 68.55% | 更强 CNN backbone 明显提升 |
-| ConvNeXt V2 Tiny BBox 448 | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE | backbone h | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 当前整体检索最强 |
+| ConvNeXt V2 Tiny BBox 448 | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE | backbone h | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 强 backbone CE retrieval baseline |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | ArcFace | backbone h | 87.83% | 87.69% | 95.92% | 85.75% | 93.33% | 96.67% | 81.33% | strong backbone + angular margin 明显叠加 |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace + Flip TTA | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | ArcFace + post-processing | backbone h | 87.83% | 87.69% | 95.92% | 86.50% | 93.25% | 96.75% | 82.34% | TTA 进一步提升 Recall@1 和 mAP |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace s30 + Flip TTA + QE | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | ArcFace + post-processing | backbone h | 87.83% | 87.69% | 95.92% | 86.25% | 92.42% | 96.33% | 82.81% | scale=30 对照，QE top3 alpha0.5 |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace s16 | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | ArcFace | backbone h | 87.17% | 87.08% | 96.42% | 86.33% | 93.58% | 96.42% | 82.72% | scale=16 基础检索最强 |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace s16 + Flip TTA + QE | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | ArcFace + post-processing | backbone h | 87.17% | 87.08% | 96.42% | 87.50% | 93.33% | 96.67% | 84.21% | 当前整体 mAP 最强，QE top3 alpha0.5 |
+| ConvNeXt V2 Tiny BBox 448 + ArcFace s16 + All-view TTA | ConvNeXt V2 Tiny | 原图 + BBox crop 448 + flip TTA | ArcFace + post-processing | backbone h | 87.17% | 87.08% | 96.42% | 87.75% | 94.25% | 96.83% | 83.64% | TTA-only Recall@1 最高，但 mAP 低于 BBox+Flip+QE |
 | DINOv2 Base Frozen BBox 448 | DINOv2 Base | BBox crop 448, margin=0.15 | frozen CE | backbone h | 89.25% | 89.06% | 98.17% | 78.00% | 93.33% | 96.75% | 68.02% | 当前分类最强 |
 | DINOv2 Small Partial BBox 448 | DINOv2 Small | BBox crop 448, margin=0.15 | partial CE | backbone h | 87.25% | 86.99% | 97.42% | 79.75% | 94.67% | 97.67% | 70.48% | DINOv2 内部检索最强 |
 | ConvNeXt V2 Tiny BBox 448 + SupCon | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE + SupCon | backbone h | 84.25% | 83.96% | 96.17% | 79.50% | 93.25% | 96.50% | 72.02% | 强 backbone 上 SupCon 未超过 CE baseline |
 | DINOv2 Small Partial BBox 448 + SupCon | DINOv2 Small | BBox crop 448, margin=0.15 | CE + SupCon | backbone h | 86.25% | 85.91% | 96.58% | 79.83% | 94.42% | 97.42% | 70.54% | mAP 与 CE baseline 基本持平 |
 | ConvNeXt V2 Tiny BBox 448 + Flip TTA | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.67% | 94.42% | 97.25% | 75.74% | 稳定后处理，Recall@5/10 和 mAP 均提升 |
 | ConvNeXt V2 Tiny BBox 448 + QE | ConvNeXt V2 Tiny | BBox crop 448, margin=0.15 | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.67% | 93.25% | 96.17% | 75.82% | 单独 Query Expansion 最强，top3 alpha0.5 |
-| ConvNeXt V2 Tiny BBox 448 + Flip TTA + QE | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | 当前整体 mAP 最强，TTA + Query Expansion top3 alpha0.5 |
+| ConvNeXt V2 Tiny BBox 448 + Flip TTA + QE | ConvNeXt V2 Tiny | BBox crop 448 + flip TTA | CE + post-processing | backbone h | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | CE backbone 上最强后处理结果，TTA + Query Expansion top3 alpha0.5 |
 
-当前最高分类结果是 `DINOv2 Base Frozen BBox 448`，Val Acc 为 89.25%，Macro-F1 为 89.06%。当前最高 mAP 检索结果是 `ConvNeXt V2 Tiny BBox 448 + Flip TTA + Query Expansion top3 alpha0.5`，mAP 为 76.82%；当前最高 Recall@1 是 `ConvNeXt V2 Tiny BBox 448 + Flip TTA + Query Expansion top3 alpha0.2`，Recall@1 为 83.17%。这说明强 backbone、BBox crop 和高分辨率输入带来的收益明显超过早期的 post-hoc local feature 优化，而 TTA + Query Expansion 可以进一步改善完整排序质量。
+Validation 上，当前最高分类结果是 `DINOv2 Base Frozen BBox 448`，Val Acc 为 89.25%，Macro-F1 为 89.06%。当前最高 mAP 检索结果是 `ConvNeXt V2 Tiny BBox 448 + ArcFace(m=0.5, s=16) + Flip TTA + Query Expansion top3 alpha0.5`，mAP 为 84.21%；当前最高 Recall@1 也是该模型，在 Query Expansion top3 alpha0.2 设置下达到 87.83%。这说明强 backbone、BBox crop、高分辨率输入和 angular margin objective 可以叠加；ArcFace 在 normalized angular space 中训练，直接改善了 cosine retrieval geometry。
 
-同时，`DINOv2 Base Frozen` 的分类最强但 mAP 只有 68.02%，低于 ConvNeXt V2 Tiny；`DINOv2 Small Partial` 的 mAP 提升到 70.48%，但仍没有超过 ConvNeXt V2 Tiny。这进一步说明分类性能和 retrieval representation quality 相关但不等价。Phase 12 中，强 backbone 上的 CE + SupCon 没有稳定超过 CE baseline，因此后续检索优化不应继续简单增加 SupCon 权重，而应转向 sampler、hard negative mining、memory bank 或 part-aware local retrieval。
+同时，`DINOv2 Base Frozen` 的分类最强但 mAP 只有 68.02%，低于 ConvNeXt V2 Tiny CE 和 ConvNeXt V2 Tiny ArcFace；`DINOv2 Small Partial` 的 mAP 提升到 70.48%，但仍没有超过 ConvNeXt V2 Tiny。这进一步说明分类性能和 retrieval representation quality 相关但不等价。Phase 12 中，强 backbone 上的 CE + SupCon 没有稳定超过 CE baseline；Phase 11.1/11.2 中 ArcFace 明显超过 CE，因此后续检索优化应优先围绕 angular margin、sampler、hard negative mining、memory bank 或 part-aware local retrieval 展开，而不是简单增加 SupCon 权重。
 
 ## Oracle 诊断结果
 
@@ -50,7 +73,7 @@
 | 方法 | Backbone | 输入 | Feature | Recall@1 | Recall@5 | Recall@10 | mAP | 说明 |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
 | Swin BBox Global | Swin-Tiny | BBox crop 224 | backbone h | 68.42% | 86.50% | 93.08% | 55.51% | 对照 baseline |
-| Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224 | token-level weighted local | 71.25% | 87.83% | 93.58% | 59.62% | soft token pooling，当前最高 mAP |
+| Swin BBox Evidence-weighted Local | Swin-Tiny | BBox crop 224 | token-level weighted local | 71.25% | 87.83% | 93.58% | 59.62% | soft token pooling，该阶段最高 mAP |
 | Swin BBox Evidence Auto Crop | Swin-Tiny | evidence heatmap hard crop | auto crop embedding | 39.75% | 65.42% | 75.17% | 27.75% | 自动硬裁剪明显失败 |
 | Swin BBox Global + Evidence Auto Crop | Swin-Tiny | BBox crop 224 + auto crop | concat_l2 | 64.08% | 85.92% | 91.67% | 50.61% | 拼接后仍低于 global baseline |
 | Swin BBox Top-M Evidence | Swin-Tiny | BBox crop 224 | top-M class evidence, M=3, tau=1.0 | 71.08% | 88.08% | 93.50% | 59.34% | Recall@5 略高，但 mAP 低于 top-1 |
@@ -71,9 +94,18 @@
 | Backbone | ResNet-18 HFlip | 69.67% | 89.33% | 58.25% | 80.75% | 87.42% | 47.76% | CNN baseline |
 | Backbone | Swin-Tiny HFlip | 75.50% | 93.42% | 61.25% | 84.33% | 90.67% | 49.04% | 更强 backbone 同时提升分类和检索 |
 | Foreground-aware | Swin-Tiny BBox Crop | 80.00% | 94.92% | 68.42% | 86.50% | 93.08% | 55.51% | 当前最有效优化方向 |
+| Angular Margin | Swin-Tiny BBox 224 ArcFace | 84.92% | 95.17% | 82.33% | 91.58% | 95.17% | 77.30% | 单模型 ArcFace 最强 |
+| Angular Margin + Post-processing | Swin-Tiny BBox 224 ArcFace + Flip TTA + QE | 84.92% | 95.17% | 83.00% | 90.33% | 94.25% | 78.62% | Swin-Tiny ArcFace 后处理最强 |
+| Strong Backbone + Angular Margin | ConvNeXt V2 Tiny BBox 448 ArcFace | 87.83% | 95.92% | 85.75% | 93.33% | 96.67% | 81.33% | 强 backbone 与 ArcFace 收益叠加 |
+| Strong Backbone + Angular Margin + Post-processing | ConvNeXt V2 Tiny BBox 448 ArcFace s30 + Flip TTA + QE | 87.83% | 95.92% | 86.25% | 92.42% | 96.33% | 82.81% | scale=30 对照 |
+| ArcFace Scale Ablation | ConvNeXt V2 Tiny BBox 448 ArcFace s16 | 87.17% | 96.42% | 86.33% | 93.58% | 96.42% | 82.72% | 基础检索最强 |
+| ArcFace Scale Ablation + Post-processing | ConvNeXt V2 Tiny BBox 448 ArcFace s16 + Flip TTA + QE | 87.17% | 96.42% | 87.50% | 93.33% | 96.67% | 84.21% | 当前整体 mAP 最强 |
+| TTA View Ablation | ConvNeXt V2 Tiny BBox 448 ArcFace s16 All-view TTA | 87.17% | 96.42% | 87.75% | 94.25% | 96.83% | 83.64% | TTA-only Recall@1 最高，但 mAP 低于 BBox+Flip+QE |
+| Angular Margin | Swin-Tiny BBox 224 CosFace | 84.33% | 93.92% | 80.25% | 91.08% | 94.67% | 74.46% | 明显优于普通 CE |
+| Angular Margin | Swin-Tiny BBox 224 ArcFace + SupCon | 84.50% | 94.67% | 79.58% | 91.33% | 95.92% | 73.20% | 低于单独 ArcFace |
 | Feature Fusion | Swin Original + BBox concat | 80.00% | 94.92% | 69.75% | 89.42% | 94.33% | 57.52% | 未压缩 fusion retrieval 对照 |
-| Feature Fusion | Swin Original + BBox concat PCA | 80.00% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | 当前最高 Recall@5 / Recall@10 |
-| Part-aware Post-hoc | BBox evidence-weighted local tau1.0 | 80.00% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | 当前最高 mAP / Recall@1 |
+| Feature Fusion | Swin Original + BBox concat PCA | 80.00% | 94.92% | 69.83% | 89.50% | 94.33% | 57.72% | fusion 阶段最高 Recall@5 / Recall@10 |
+| Part-aware Post-hoc | BBox evidence-weighted local tau1.0 | 80.00% | 94.92% | 71.25% | 87.83% | 93.58% | 59.62% | part-aware post-hoc 阶段最高 mAP / Recall@1 |
 | Part-aware Training | Head-aware soft selector | 82.83% | 95.42% | 67.67% | 86.92% | 93.83% | 55.71% | 分类最高，但检索未提升 |
 
 ## Phase 5 Representation Learning
@@ -103,7 +135,7 @@ Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值�
 | Resolution | Swin Original 448 | 78.83% | 78.37% | 95.08% | 67.08% | 88.17% | 93.58% | 53.92% | 纯提高分辨率有效，但不如 BBox 448 |
 | Resolution | Swin BBox 448 | 81.33% | 81.05% | 95.42% | 70.58% | 89.75% | 93.67% | 58.97% | Foreground + detail 更有效 |
 | Backbone | ConvNeXt V2 Nano BBox 448 | 87.00% | 86.72% | 97.08% | 78.42% | 93.00% | 96.33% | 68.55% | 小模型也强于 Swin |
-| Backbone | ConvNeXt V2 Tiny BBox 448 | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 当前整体检索最强 |
+| Backbone | ConvNeXt V2 Tiny BBox 448 | 86.42% | 85.74% | 97.33% | 82.75% | 93.75% | 96.92% | 75.06% | 强 backbone 阶段检索最强 |
 | Backbone | Swin-Small BBox 448 | 86.50% | 86.07% | 97.25% | 81.92% | 94.75% | 96.75% | 72.82% | 参数更多，检索强但不如 ConvNeXt V2 Tiny |
 | DINOv2 | DINOv2 Small Frozen | 87.42% | 87.39% | 97.75% | 75.67% | 93.67% | 96.58% | 63.33% | frozen representation 分类强，检索一般 |
 | DINOv2 | DINOv2 Base Frozen | 89.25% | 89.06% | 98.17% | 78.00% | 93.33% | 96.75% | 68.02% | 当前分类最强 |
@@ -111,16 +143,29 @@ Phase 5 的关键结论是：单纯增大 SupCon 权重不能稳定提升数值�
 | DINOv2 | DINOv2 Small Partial Last 2 Blocks | 87.25% | 86.99% | 97.42% | 79.75% | 94.67% | 97.67% | 70.48% | DINOv2 内部检索最强 |
 | Strong Backbone SupCon | ConvNeXt V2 Tiny CE + SupCon | 84.25% | 83.96% | 96.17% | 79.50% | 93.25% | 96.50% | 72.02% | 低于 ConvNeXt CE baseline |
 | Strong Backbone SupCon | DINOv2 Small Partial CE + SupCon | 86.25% | 85.91% | 96.58% | 79.83% | 94.42% | 97.42% | 70.54% | 与 DINOv2 CE baseline 基本持平 |
+| Angular Margin | Swin-Tiny BBox 224 ArcFace | 84.92% | 84.50% | 95.17% | 82.33% | 91.58% | 95.17% | 77.30% | 单模型 ArcFace 最强，训练目标更匹配 cosine retrieval |
+| Angular Margin + Post-processing | Swin-Tiny BBox 224 ArcFace + Flip TTA | 84.92% | 84.50% | 95.17% | 82.67% | 91.33% | 95.50% | 77.71% | Flip TTA 小幅提升 mAP |
+| Angular Margin + Post-processing | Swin-Tiny BBox 224 ArcFace + Flip TTA + QE top3 alpha0.5 | 84.92% | 84.50% | 95.17% | 83.00% | 90.33% | 94.25% | 78.62% | Swin-Tiny ArcFace 后处理最强 |
+| Strong Backbone + Angular Margin | ConvNeXt V2 Tiny BBox 448 ArcFace | 87.83% | 87.69% | 95.92% | 85.75% | 93.33% | 96.67% | 81.33% | 强 backbone 与 ArcFace 收益叠加 |
+| Strong Backbone + Angular Margin + Post-processing | ConvNeXt V2 Tiny BBox 448 ArcFace + Flip TTA | 87.83% | 87.69% | 95.92% | 86.50% | 93.25% | 96.75% | 82.34% | TTA 进一步提升 Recall@1 和 mAP |
+| Strong Backbone + Angular Margin + Post-processing | ConvNeXt V2 Tiny BBox 448 ArcFace s30 + Flip TTA + QE top3 alpha0.5 | 87.83% | 87.69% | 95.92% | 86.25% | 92.42% | 96.33% | 82.81% | scale=30 对照 |
+| ArcFace Scale Ablation | ConvNeXt V2 Tiny BBox 448 ArcFace s16 | 87.17% | 87.08% | 96.42% | 86.33% | 93.58% | 96.42% | 82.72% | 基础检索最强 |
+| ArcFace Scale Ablation + Post-processing | ConvNeXt V2 Tiny BBox 448 ArcFace s16 + Flip TTA + QE top3 alpha0.5 | 87.17% | 87.08% | 96.42% | 87.50% | 93.33% | 96.67% | 84.21% | 当前整体 mAP 最强 |
+| TTA View Ablation | ConvNeXt V2 Tiny BBox 448 ArcFace s16 All-view TTA | 87.17% | 87.08% | 96.42% | 87.75% | 94.25% | 96.83% | 83.64% | TTA-only Recall@1 最高，但 mAP 低于 BBox+Flip+QE |
+| Angular Margin | Swin-Tiny BBox 224 CosFace | 84.33% | 83.98% | 93.92% | 80.25% | 91.08% | 94.67% | 74.46% | 明显优于普通 CE，但低于 ArcFace |
+| Angular Margin | Swin-Tiny BBox 224 ArcFace + SupCon | 84.50% | 84.29% | 94.67% | 79.58% | 91.33% | 95.92% | 73.20% | 直接叠加 SupCon 没有带来互补收益 |
 | Retrieval Post-processing | ConvNeXt V2 Tiny BBox + Flip TTA | 86.42% | 85.74% | 97.33% | 82.67% | 94.42% | 97.25% | 75.74% | 稳定提升 Recall@5/10 和 mAP |
 | Retrieval Post-processing | ConvNeXt V2 Tiny QE top3 alpha0.5 | 86.42% | 85.74% | 97.33% | 82.67% | 93.25% | 96.17% | 75.82% | 单独 Query Expansion 最强 |
-| Retrieval Post-processing | ConvNeXt V2 Tiny BBox + Flip TTA + QE top3 alpha0.5 | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | 当前整体 mAP 最强 |
+| Retrieval Post-processing | ConvNeXt V2 Tiny BBox + Flip TTA + QE top3 alpha0.5 | 86.42% | 85.74% | 97.33% | 82.83% | 93.83% | 96.58% | 76.82% | CE backbone 后处理最强 |
 
-Phase 10-12 的关键结论是：`BBox crop + 448 input + stronger backbone` 是当前最有效提升路径。ConvNeXt V2 Tiny 的 CE embedding 已经形成很强的 retrieval geometry，简单加入 SupCon 没有进一步提升。DINOv2 的 frozen linear classification 很强，但 retrieval ranking 不如 ConvNeXt；小范围 partial fine-tuning 可以显著提升 DINOv2 retrieval，但仍没有超过 ConvNeXt V2 Tiny。
+Phase 10-12 的关键结论是：`BBox crop + 448 input + stronger backbone` 是非常有效的提升路径。ConvNeXt V2 Tiny 的 CE embedding 已经形成很强的 retrieval geometry，简单加入 SupCon 没有进一步提升。DINOv2 的 frozen linear classification 很强，但 retrieval ranking 不如 ConvNeXt；小范围 partial fine-tuning 可以显著提升 DINOv2 retrieval，但仍没有超过 ConvNeXt V2 Tiny。
 
-Phase 13 的 BBox + Flip TTA 将 mAP 从 `75.06%` 提升到 `75.74%`，并同时提升 Recall@5/10，是更稳定的默认后处理。进一步叠加 Query Expansion top3 alpha0.5 后，mAP 提升到 `76.82%`，成为当前整体最强 retrieval 结果。后处理有效，但收益幅度小于 backbone、resolution 和 foreground-aware input。
+Phase 13 的 BBox + Flip TTA 将 mAP 从 `75.06%` 提升到 `75.74%`，并同时提升 Recall@5/10，是更稳定的默认后处理。进一步叠加 Query Expansion top3 alpha0.5 后，mAP 提升到 `76.82%`，成为 CE backbone 上的最强后处理结果。
+
+Phase 11.1 的 Angular Margin 实验进一步改写了当前结论：Swin-Tiny BBox 224 + ArcFace 在不使用 448 分辨率和检索后处理的情况下，mAP 达到 `77.30%`，超过 ConvNeXt V2 Tiny BBox 448 + TTA + QE。Phase 11.2 中，Swin ArcFace + Flip TTA + Query Expansion top3 alpha0.5 继续把 mAP 提升到 `78.62%`；迁移到 ConvNeXt V2 Tiny BBox448 后，基础 ArcFace mAP 达到 `81.33%`，Flip TTA + Query Expansion top3 alpha0.5 达到 `82.81%`。Phase 11.3 进一步发现 `scale=16` 比默认 `scale=30` 更适合 retrieval，基础 mAP 达到 `82.72%`，后处理 mAP 达到 `84.21%`。Phase 11.4 显示原图上下文视角没有超过 `BBox + BBox Flip`，说明 foreground view 仍然是最稳定的信息来源。这说明 retrieval 的核心瓶颈不仅是 backbone capacity 和输入分辨率，也包括训练目标是否与 cosine nearest-neighbor ranking 对齐。
 
 ## 当前结论
 
-当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是早期最有效的单模型优化方向。继续提高到 BBox crop 448 后，Swin-Tiny 的 mAP 达到 58.97%。再换成 ConvNeXt V2 Tiny 后，mAP 提升到 75.06%。最后通过 BBox + Flip TTA + Query Expansion，mAP 提升到 76.82%，成为当前整体检索最强结果。
+当前项目数值提升路径已经比较清楚。原图输入下，Swin-Tiny 明显强于 ResNet-18；但 Phase 6 显示 Swin 和 ResNet 都仍有背景参与。BBox crop 直接把 Swin-Tiny 的 Val Acc 提升到 80.00%，mAP 提升到 55.51%，说明 foreground-aware input 是早期最有效的单模型优化方向。继续提高到 BBox crop 448 后，Swin-Tiny 的 mAP 达到 58.97%。再换成 ConvNeXt V2 Tiny 后，mAP 提升到 75.06%。通过 BBox + Flip TTA + Query Expansion，mAP 进一步提升到 76.82%。ArcFace 实验先把 Swin-Tiny BBox 224 的 mAP 提升到 77.30%，并通过 Flip TTA + Query Expansion 提升到 78.62%。ConvNeXt V2 Tiny BBox448 ArcFace 达到 81.33% mAP，结合 Flip TTA + Query Expansion 后达到 82.81%。最新的 scale ablation 将 `scale=30` 调整为 `scale=16` 后，最终 mAP 达到 84.21%，成为当前整体检索最强结果。
 
-下一阶段不应继续盲目换更大 backbone，也不应简单增加 SupCon 权重。Phase 12 表明，在强 backbone 上直接加入 CE + SupCon 没有超过 CE baseline。更有价值的路线是围绕 retrieval objective 本身改训练机制：class-balanced sampler / PK sampler、larger effective batch size、memory bank、hard negative mining，或者把 Phase 8 中有效的 local evidence 思路迁移到强 backbone 上，做 part-aware local retrieval。
+下一阶段不应继续盲目换更大 backbone，也不应简单增加 SupCon 权重。Phase 12 表明，在强 backbone 上直接加入 CE + SupCon 没有超过 CE baseline；Phase 11.1-11.4 表明，ArcFace 这类 angular margin objective 是当前最有效的新方向，且 BBox+Flip 是当前最稳的视角组合。更有价值的路线是在 ConvNeXt V2 Tiny BBox448 ArcFace `margin=0.5, scale=16` 上继续做 hard negative mining、memory bank 或 part-aware local re-ranking。

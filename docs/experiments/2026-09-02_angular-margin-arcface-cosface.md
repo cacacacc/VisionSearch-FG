@@ -168,16 +168,32 @@ $run = Get-ChildItem outputs\checkpoints\foreground_swin_tiny_bbox224_cosface | 
 | 方法 | Run ID | Val Acc | Macro-F1 | Top-5 Acc | Recall@1 | Recall@5 | Recall@10 | mAP |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | CE BBox 224 | `20260830_141148_foreground_swin_tiny_bbox224` | 80.00% | 79.52% | 94.92% | 68.42% | 86.50% | 93.08% | 55.51% |
-| ArcFace BBox 224 | 待运行 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
-| ArcFace + SupCon BBox 224 | 待运行 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
-| CosFace BBox 224 | 可选 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 | 待记录 |
+| ArcFace BBox 224 | `20260904_105853_foreground_swin_tiny_bbox224_arcface` | 84.92% | 84.50% | 95.17% | 82.33% | 91.58% | 95.17% | 77.30% |
+| ArcFace + SupCon BBox 224 | `20260905_094114_foreground_swin_tiny_bbox224_arcface_supcon` | 84.50% | 84.29% | 94.67% | 79.58% | 91.33% | 95.92% | 73.20% |
+| CosFace BBox 224 | `20260905_100822_foreground_swin_tiny_bbox224_cosface` | 84.33% | 83.98% | 93.92% | 80.25% | 91.08% | 94.67% | 74.46% |
 
-## 预期解释
+## 训练记录
 
-如果 ArcFace 提升 retrieval，说明让训练目标直接匹配 cosine angular geometry 是有效方向。
+| 方法 | Best Epoch | 实际训练 Epoch | 训练时间 | 参数量 |
+| --- | ---: | ---: | ---: | ---: |
+| ArcFace BBox 224 | 13 | 18 | 15.40 min | 27.67M |
+| ArcFace + SupCon BBox 224 | 7 | 9 | 10.39 min | 27.67M |
+| CosFace BBox 224 | 14 | 19 | 16.17 min | 27.67M |
 
-如果 ArcFace 提升 classification 但 retrieval 不提升，说明 angular margin 改善了 decision boundary，但没有稳定改善 sample-level nearest-neighbor ranking。
+## 结果分析
 
-如果 ArcFace + SupCon 优于 ArcFace，说明 class-margin-based 约束和 pair-based 约束互补。
+ArcFace 是本实验最强方法。与普通 CE BBox 224 相比，ArcFace 将 Val Acc 从 `80.00%` 提升到 `84.92%`，Recall@1 从 `68.42%` 提升到 `82.33%`，mAP 从 `55.51%` 提升到 `77.30%`。这说明让训练目标直接匹配 cosine angular geometry 对当前 retrieval representation 非常有效。
 
-如果 ArcFace + SupCon 低于 ArcFace，说明当前 SupCon 权重、temperature、batch composition 或 augmentation 与 angular margin 存在冲突，需要单独调参，而不是直接叠加 loss。
+CosFace 也明显优于普通 CE，但低于 ArcFace。CosFace 的 mAP 为 `74.46%`，说明 additive cosine margin 能改善 embedding space，但在当前配置下不如 ArcFace 的 angular margin。
+
+ArcFace + SupCon 没有超过单独 ArcFace。它的分类指标接近 ArcFace，但 Recall@1 和 mAP 明显下降，说明当前 SupCon 权重、temperature、two-view augmentation 或 batch composition 与 angular margin 存在冲突。这个结果不能解释为 SupCon 无效，而应解释为：class-margin-based 约束和 pair-based 约束不能直接无调参叠加。
+
+## 结论
+
+本实验建立了一个非常重要的结果：在 Swin-Tiny + BBox 224 条件下，Angular Margin Classification 比普通 CE 更适合学习 cosine retrieval embedding。ArcFace 甚至在 224 输入分辨率下超过了此前 ConvNeXt V2 Tiny BBox 448 + TTA + Query Expansion 的 mAP，因此它应成为后续 metric learning 方向的核心 baseline。
+
+下一步最值得做的是：
+
+1. 对 ArcFace checkpoint 做 Flip TTA 和 Query Expansion，验证后处理是否还能继续提升 mAP。
+2. 将 ArcFace 从 Swin-Tiny BBox 224 迁移到 ConvNeXt V2 Tiny BBox 448，验证强 backbone + angular margin 是否叠加。
+3. 若继续加入 SupCon，需要先使用 P×K sampler 或 hard negative mining，而不是沿用当前 random batch。

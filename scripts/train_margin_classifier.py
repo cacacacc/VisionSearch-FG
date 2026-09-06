@@ -32,6 +32,7 @@ from visionsearch_fg.models import (
     AngularMarginClassifier,
     build_resnet18_classifier,
     build_swin_tiny_classifier,
+    build_timm_classifier,
     default_margin_for_type,
 )
 from visionsearch_fg.utils import load_yaml_config
@@ -72,7 +73,9 @@ def main() -> None:
     runtime_config = config.get("runtime", {})
 
     epochs = args.epochs if args.epochs is not None else int(training_config["epochs"])
-    batch_size = args.batch_size if args.batch_size is not None else int(training_config["batch_size"])
+    batch_size = (
+        args.batch_size if args.batch_size is not None else int(training_config["batch_size"])
+    )
     pretrained = (
         args.pretrained.lower() == "true"
         if args.pretrained is not None
@@ -336,6 +339,16 @@ def build_model(model_config: dict, pretrained: bool) -> AngularMarginClassifier
             freeze_backbone=bool(model_config.get("freeze_backbone", False)),
             fine_tune_mode=model_config.get("fine_tune_mode"),
         )
+    elif backbone.startswith("timm:"):
+        base_classifier = build_timm_classifier(
+            model_name=backbone.removeprefix("timm:"),
+            num_classes=int(model_config["num_classes"]),
+            pretrained=pretrained,
+            freeze_backbone=bool(model_config.get("freeze_backbone", False)),
+            fine_tune_mode=model_config.get("fine_tune_mode"),
+            trainable_backbone_layers=model_config.get("trainable_backbone_layers"),
+            model_kwargs=model_config.get("timm_kwargs"),
+        )
     else:
         raise ValueError(f"Unsupported backbone: {backbone}")
 
@@ -462,7 +475,9 @@ def build_optimizer_parameter_groups(
     if head_parameters:
         parameter_groups.append({"params": head_parameters, "lr": classifier_lr or default_lr})
     if projection_parameters:
-        parameter_groups.append({"params": projection_parameters, "lr": projection_lr or default_lr})
+        parameter_groups.append(
+            {"params": projection_parameters, "lr": projection_lr or default_lr}
+        )
     if not parameter_groups:
         raise RuntimeError("No trainable parameters found for optimizer")
     return parameter_groups
