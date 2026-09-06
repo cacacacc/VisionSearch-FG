@@ -8,7 +8,12 @@ def macro_f1_score(
     targets: torch.Tensor,
     num_classes: int | None = None,
 ) -> float:
-    """Compute macro-F1 over classes present in targets by default."""
+    """Compute the unweighted mean of per-class F1 scores.
+
+    When ``num_classes`` is omitted, only classes appearing in ``targets`` are
+    averaged. Supplying it evaluates the complete class range and assigns zero
+    to classes with no true positives, which is useful for fixed-class reports.
+    """
     if predictions.ndim != 1:
         raise ValueError(
             f"predictions must have shape [num_samples], got {tuple(predictions.shape)}"
@@ -29,6 +34,8 @@ def macro_f1_score(
 
     f1_scores = []
     for class_id in class_ids:
+        # Count one-vs-rest outcomes for this class. The macro average later
+        # gives each class equal importance regardless of its sample count.
         true_positive = ((predictions == class_id) & (targets == class_id)).sum().float()
         false_positive = ((predictions == class_id) & (targets != class_id)).sum().float()
         false_negative = ((predictions != class_id) & (targets == class_id)).sum().float()
@@ -42,7 +49,7 @@ def macro_f1_score(
 
 
 def top_k_accuracy(logits: torch.Tensor, targets: torch.Tensor, k: int = 1) -> float:
-    """Compute top-k accuracy for classification logits."""
+    """Compute the fraction whose target appears among the k largest logits."""
     if logits.ndim != 2:
         raise ValueError(f"logits must have shape [batch, num_classes], got {tuple(logits.shape)}")
     if targets.ndim != 1:
@@ -59,5 +66,5 @@ def top_k_accuracy(logits: torch.Tensor, targets: torch.Tensor, k: int = 1) -> f
 
 
 def accuracy(logits: torch.Tensor, targets: torch.Tensor) -> float:
-    """Compute ordinary top-1 accuracy."""
+    """Compute ordinary top-1 accuracy through the shared Top-K implementation."""
     return top_k_accuracy(logits=logits, targets=targets, k=1)

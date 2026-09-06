@@ -11,7 +11,13 @@ FineTuneMode = Literal["frozen", "partial", "full"]
 
 
 class TimmClassifier(nn.Module):
-    """Generic timm image classifier that exposes pooled visual embeddings."""
+    """Generic timm image classifier that exposes pooled visual embeddings.
+
+    ``timm`` supplies many backbones with different output conventions. This
+    wrapper standardizes them into one interface returning ``logits`` and a
+    two-dimensional embedding, while allowing configuration-driven partial
+    fine-tuning by module path.
+    """
 
     def __init__(
         self,
@@ -33,6 +39,8 @@ class TimmClassifier(nn.Module):
             ) from error
 
         timm_kwargs = dict(model_kwargs or {})
+        # Remove wrapper-level pooling configuration before forwarding the
+        # remaining model-specific options to timm.create_model.
         global_pool = timm_kwargs.pop("global_pool", "avg")
         backbone = timm.create_model(
             model_name,
@@ -58,10 +66,13 @@ class TimmClassifier(nn.Module):
         )
 
     def forward(self, images: torch.Tensor) -> ModelOutput:
+        """Run the selected timm encoder and canonicalize its feature shape."""
         embedding = self.backbone(images)
         if embedding.ndim == 4:
+            # Some CNN backbones return [B, C, H, W] despite global_pool=none.
             embedding = embedding.mean(dim=(-2, -1))
         elif embedding.ndim > 2:
+            # Token-based backbones may return extra spatial/token dimensions.
             embedding = torch.flatten(embedding, start_dim=1)
         logits = self.classifier(embedding)
         return ModelOutput(logits=logits, embedding=embedding)
@@ -71,6 +82,7 @@ class TimmClassifier(nn.Module):
         mode: FineTuneMode,
         trainable_backbone_layers: list[str] | None = None,
     ) -> None:
+        """Apply frozen, full, or explicitly selected partial fine-tuning."""
         if mode == "full":
             for parameter in self.backbone.parameters():
                 parameter.requires_grad = True
@@ -116,6 +128,7 @@ def build_timm_classifier(
 
 
 def _resolve_module(root: nn.Module, module_path: str) -> nn.Module:
+    """Resolve dotted attribute/index paths such as ``stages.3.blocks.0``."""
     module: nn.Module = root
     for part in module_path.split("."):
         if part.isdigit() and isinstance(module, (nn.Sequential, nn.ModuleList)):

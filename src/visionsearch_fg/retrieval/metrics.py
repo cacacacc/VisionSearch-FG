@@ -8,6 +8,7 @@ RetrievalMetric = Literal["cosine", "euclidean"]
 
 
 def l2_normalize(embeddings: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+    """Normalize every embedding vector independently to unit length."""
     if embeddings.ndim != 2:
         raise ValueError("embeddings must have shape [num_samples, embedding_dim]")
     norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
@@ -15,6 +16,7 @@ def l2_normalize(embeddings: np.ndarray, eps: float = 1e-12) -> np.ndarray:
 
 
 def cosine_similarity_matrix(embeddings: np.ndarray) -> np.ndarray:
+    """Return all-pairs cosine similarity after L2 normalization."""
     normalized_embeddings = l2_normalize(embeddings)
     return normalized_embeddings @ normalized_embeddings.T
 
@@ -26,6 +28,12 @@ def dot_product_similarity_matrix(embeddings: np.ndarray) -> np.ndarray:
 
 
 def euclidean_distance_matrix(embeddings: np.ndarray) -> np.ndarray:
+    """Return the all-pairs Euclidean distance matrix.
+
+    The vectorized identity ``||a-b||^2 = ||a||^2 + ||b||^2 - 2a.b`` avoids a
+    Python loop over image pairs. Small negative values caused by floating
+    point roundoff are clamped before taking the square root.
+    """
     if embeddings.ndim != 2:
         raise ValueError("embeddings must have shape [num_samples, embedding_dim]")
 
@@ -73,6 +81,7 @@ def rank_embeddings(
     metric: RetrievalMetric,
     exclude_self: bool = True,
 ) -> np.ndarray:
+    """Convert embeddings into one ranked gallery list per query image."""
     if metric == "cosine":
         similarity = cosine_similarity_matrix(embeddings)
         return rank_gallery_for_queries(similarity, exclude_self=exclude_self)
@@ -93,6 +102,7 @@ def recall_at_k(ranked_indices: np.ndarray, labels: np.ndarray, k: int) -> float
 
 
 def mean_average_precision(ranked_indices: np.ndarray, labels: np.ndarray) -> float:
+    """Average per-query precision at every relevant retrieved position."""
     average_precisions = [
         average_precision(
             ranked_indices=query_ranked_indices,
@@ -109,6 +119,7 @@ def average_precision(
     labels: np.ndarray,
     query_index: int,
 ) -> float:
+    """Compute one query's average precision from its ranked gallery."""
     relevant = labels[ranked_indices] == labels[query_index]
     if not relevant.any():
         return 0.0
@@ -124,6 +135,12 @@ def evaluate_retrieval(
     recall_ks: tuple[int, ...],
     metric: RetrievalMetric = "cosine",
 ) -> dict:
+    """Compute Recall@K and mAP for an image-to-image retrieval run.
+
+    The current protocol treats every embedding as both a query and a gallery
+    item, then excludes the query itself from its ranked results. Labels define
+    relevance: another image is relevant when it belongs to the same class.
+    """
     if embeddings.shape[0] != labels.shape[0]:
         raise ValueError("embeddings and labels must contain the same number of samples")
 

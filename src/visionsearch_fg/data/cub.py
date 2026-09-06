@@ -15,6 +15,13 @@ BBox = tuple[float, float, float, float]
 
 @dataclass(frozen=True)
 class CUBSample:
+    """Immutable description of one CUB image before it is loaded.
+
+    Keeping metadata separate from the decoded image makes dataset indexing
+    cheap and lets the same sample record support classification, retrieval,
+    and optional bounding-box cropping.
+    """
+
     image_id: int
     image_path: Path
     label: int
@@ -24,7 +31,13 @@ class CUBSample:
 
 
 class CUB200Dataset(Dataset):
-    """CUB-200-2011 dataset reader for classification and embedding learning."""
+    """CUB-200-2011 dataset reader for classification and embedding learning.
+
+    CUB distributes several text files instead of one annotation table. The
+    constructor joins those files by ``image_id`` and materializes a validated
+    sample list. ``__getitem__`` then performs only per-image work: opening the
+    image, applying the optional bounding-box crop, and running the transform.
+    """
 
     def __init__(
         self,
@@ -57,6 +70,7 @@ class CUB200Dataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index: int) -> dict:
+        """Load one image and return the tensor plus retrieval-friendly metadata."""
         sample = self.samples[index]
 
         with Image.open(sample.image_path) as image:
@@ -65,6 +79,8 @@ class CUB200Dataset(Dataset):
         if self.crop_mode == "bbox":
             if sample.bbox is None:
                 raise ValueError(f"Missing bounding box for image id {sample.image_id}.")
+            # Crop before the transform so resizing and normalization operate
+            # on the bird region rather than on the original full image.
             image = crop_image_to_bbox(image, sample.bbox, margin=self.bbox_margin)
 
         if self.transform is not None:
@@ -80,6 +96,7 @@ class CUB200Dataset(Dataset):
         }
 
     def _load_samples(self) -> list[CUBSample]:
+        """Join CUB metadata files and apply the requested split/filter."""
         images = _read_id_text_file(self.root / "images.txt")
         labels = _read_id_int_file(self.root / "image_class_labels.txt")
         split_flags = _read_id_int_file(self.root / "train_test_split.txt")
@@ -98,6 +115,9 @@ class CUB200Dataset(Dataset):
                 raise ValueError(f"Missing train/test split flag for image id {image_id}.")
 
             is_train = split_flags[image_id] == 1
+            # CUB's official split is kept intact here. A separate helper can
+            # subdivide the official training set into train and validation IDs
+            # without changing the official test set.
             if self.split == "train" and not is_train:
                 continue
             if self.split == "test" and is_train:
@@ -134,6 +154,12 @@ class CUB200Dataset(Dataset):
 
 
 def crop_image_to_bbox(image: Image.Image, bbox: BBox, margin: float = 0.0) -> Image.Image:
+    """Crop an image to a CUB box, optionally expanding it by a ratio.
+
+    CUB stores boxes as ``(x, y, width, height)``. The margin is applied to
+    both sides of each dimension, then coordinates are clipped to the image so
+    a generous margin cannot create an invalid crop outside the file bounds.
+    """
     x, y, width, height = bbox
     if width <= 0 or height <= 0:
         raise ValueError(f"Invalid bounding box with non-positive size: {bbox}")

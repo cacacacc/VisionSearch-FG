@@ -14,13 +14,21 @@ MarginType = Literal["arcface", "cosface"]
 
 @dataclass(frozen=True)
 class AngularMarginOutput:
+    """Output bundle for margin-based classification and optional contrastive use."""
+
     logits: torch.Tensor
     embedding: torch.Tensor
     projection: torch.Tensor | None = None
 
 
 class AngularMarginHead(nn.Module):
-    """ArcFace/CosFace classification head over L2-normalized embeddings."""
+    """ArcFace/CosFace classification head over L2-normalized embeddings.
+
+    Normalized class weights and embeddings make the linear output a cosine
+    similarity. ArcFace adds the margin in angle space; CosFace subtracts it
+    directly from the target cosine. The scale restores a useful logit range
+    for cross-entropy after normalization.
+    """
 
     def __init__(
         self,
@@ -53,6 +61,12 @@ class AngularMarginHead(nn.Module):
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, embeddings: torch.Tensor, labels: torch.Tensor | None = None) -> torch.Tensor:
+        """Produce margin-adjusted logits when labels are supplied.
+
+        Labels are optional so the same head can produce inference logits
+        without modifying a target class. During training, only the target
+        class logit receives the angular margin.
+        """
         cosine = F.linear(F.normalize(embeddings, dim=1), F.normalize(self.weight, dim=1))
         if labels is None:
             return cosine * self.scale
@@ -76,7 +90,12 @@ class AngularMarginHead(nn.Module):
 
 
 class AngularMarginClassifier(nn.Module):
-    """Wrap an embedding classifier with an ArcFace/CosFace head."""
+    """Wrap an embedding classifier with an ArcFace/CosFace head.
+
+    The base classifier contributes its backbone, while the ordinary linear
+    classification layer is replaced by the margin head. An optional projection
+    head keeps this model compatible with joint margin and SupCon experiments.
+    """
 
     def __init__(
         self,
@@ -127,6 +146,7 @@ class AngularMarginClassifier(nn.Module):
         images: torch.Tensor,
         labels: torch.Tensor | None = None,
     ) -> AngularMarginOutput:
+        """Encode images and apply the selected margin head to their labels."""
         embedding = self.backbone(images)
         logits = self.margin_head(embedding, labels=labels)
         projection = self.projection_head(embedding) if self.projection_head is not None else None
@@ -134,6 +154,7 @@ class AngularMarginClassifier(nn.Module):
 
 
 def default_margin_for_type(margin_type: MarginType) -> float:
+    """Return the project defaults used for ArcFace and CosFace experiments."""
     if margin_type == "arcface":
         return 0.5
     if margin_type == "cosface":
@@ -142,4 +163,5 @@ def default_margin_for_type(margin_type: MarginType) -> float:
 
 
 def degrees_from_radians(value: float) -> float:
+    """Convert an angular margin from radians to degrees for readable reports."""
     return value * 180.0 / math.pi

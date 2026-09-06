@@ -35,6 +35,13 @@ def train_one_epoch(
     device: torch.device,
     max_batches: int | None = None,
 ) -> TrainStats:
+    """Run one optimization pass and return sample-weighted statistics.
+
+    Loss and accuracy are accumulated after multiplying each batch statistic by
+    its batch size. This makes the result correct even when the final batch is
+    smaller than the others. ``max_batches`` is intended for CPU smoke tests
+    and quick debugging, not for silently changing a formal experiment.
+    """
     model.train()
 
     total_loss = 0.0
@@ -43,6 +50,8 @@ def train_one_epoch(
 
     progress = tqdm(_limit_batches(dataloader, max_batches), desc="train", leave=False)
     for batch in progress:
+        # The dataset returns a dictionary so metadata can travel through the
+        # loader, but the optimization step only consumes image tensors/labels.
         images = batch["image"].to(device)
         labels = batch["label"].to(device)
 
@@ -79,6 +88,11 @@ def validate(
     device: torch.device,
     max_batches: int | None = None,
 ) -> EvalStats:
+    """Evaluate without gradients and compute classification diagnostics.
+
+    Predictions and labels are collected on CPU so macro-F1 can be computed
+    over the complete validation set rather than averaging per-batch F1 scores.
+    """
     model.eval()
 
     total_loss = 0.0
@@ -99,6 +113,7 @@ def validate(
         batch_size = labels.shape[0]
         batch_accuracy = accuracy(output.logits, labels)
         batch_top5_accuracy = top_k_accuracy(output.logits, labels, k=5)
+        # Keep the class decision for the full-set macro-F1 calculation below.
         predictions = output.logits.argmax(dim=1)
 
         total_loss += loss.item() * batch_size

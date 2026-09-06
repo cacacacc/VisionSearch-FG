@@ -8,13 +8,20 @@ from torch import nn
 
 @dataclass(frozen=True)
 class ContrastiveOutput:
+    """Keep classification, retrieval, and contrastive representations together."""
+
     logits: torch.Tensor
     embedding: torch.Tensor
     projection: torch.Tensor
 
 
 class ContrastiveClassifier(nn.Module):
-    """Classifier with an additional projection head for contrastive learning."""
+    """Classifier with an additional projection head for contrastive learning.
+
+    The classifier embedding is kept for retrieval. The projection is a
+    separate space used by SupCon, so the contrastive objective does not force
+    the retrieval feature dimension to equal the projection dimension.
+    """
 
     def __init__(
         self,
@@ -34,6 +41,8 @@ class ContrastiveClassifier(nn.Module):
             raise ValueError("identity projection_head requires projection_dim == embedding_dim")
 
         hidden_dim = projection_hidden_dim or embedding_dim
+        # Reuse the base encoder and classifier rather than creating duplicate
+        # parameters; this preserves the selected backbone fine-tuning policy.
         self.backbone = classifier.backbone
         self.classifier = classifier.classifier
         self.embedding_dim = embedding_dim
@@ -50,6 +59,7 @@ class ContrastiveClassifier(nn.Module):
             )
 
     def forward(self, images: torch.Tensor) -> ContrastiveOutput:
+        """Return logits, the retrieval embedding, and the SupCon projection."""
         embedding = self.backbone(images)
         if embedding.ndim == 4:
             embedding = embedding.mean(dim=(-2, -1))

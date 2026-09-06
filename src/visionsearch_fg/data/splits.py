@@ -14,7 +14,14 @@ def stratified_train_val_split(
     val_ratio: float,
     seed: int,
 ) -> tuple[list[int], list[int]]:
-    """Split official train samples into fixed stratified train and validation IDs."""
+    """Split official training samples while preserving every class.
+
+    The split is performed independently per label, shuffled with a local
+    seeded generator, and returned as sorted image IDs. Sorting makes the
+    generated files reproducible and easy to diff without changing membership.
+    The official CUB test set is not passed to this function and is therefore
+    never accidentally mixed into validation.
+    """
     if not 0 < val_ratio < 1:
         raise ValueError("val_ratio must be between 0 and 1")
 
@@ -41,6 +48,7 @@ def stratified_train_val_split(
 
 
 def read_image_ids(path: str | Path) -> list[int]:
+    """Read one image ID per line, tolerating blank lines and UTF-8 BOMs."""
     image_ids: list[int] = []
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         stripped = line.strip().lstrip("\ufeff")
@@ -50,6 +58,7 @@ def read_image_ids(path: str | Path) -> list[int]:
 
 
 def write_image_ids(path: str | Path, image_ids: list[int]) -> None:
+    """Create parent directories and write a deterministic ID list."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -59,6 +68,7 @@ def write_image_ids(path: str | Path, image_ids: list[int]) -> None:
 
 
 def write_split_manifest(path: str | Path, manifest: dict[str, Any]) -> None:
+    """Write split provenance as indented JSON for later experiment audits."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

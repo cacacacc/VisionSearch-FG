@@ -12,7 +12,12 @@ FineTuneMode = Literal["frozen", "full"]
 
 
 class SwinTinyClassifier(nn.Module):
-    """Swin-Tiny classifier that exposes the pooled visual embedding."""
+    """Swin-Tiny classifier that exposes the pooled visual embedding.
+
+    As with the ResNet wrapper, the pretrained ImageNet head is removed and a
+    new classifier is attached for the 200 CUB classes. The pooled Swin vector
+    remains available for image retrieval.
+    """
 
     def __init__(
         self,
@@ -25,6 +30,8 @@ class SwinTinyClassifier(nn.Module):
         weights = Swin_T_Weights.DEFAULT if pretrained else None
         backbone = swin_t(weights=weights)
 
+        # Swin's head would otherwise produce ImageNet logits and hide the
+        # feature vector needed by the retrieval pipeline.
         embedding_dim = backbone.head.in_features
         backbone.head = nn.Identity()
 
@@ -37,11 +44,13 @@ class SwinTinyClassifier(nn.Module):
         self.set_fine_tune_mode(mode)
 
     def forward(self, images: torch.Tensor) -> ModelOutput:
+        """Return CUB logits and the pooled Swin representation."""
         embedding = self.backbone(images)
         logits = self.classifier(embedding)
         return ModelOutput(logits=logits, embedding=embedding)
 
     def set_fine_tune_mode(self, mode: FineTuneMode) -> None:
+        """Freeze or unfreeze only the backbone; the new classifier stays trainable."""
         if mode == "full":
             for parameter in self.backbone.parameters():
                 parameter.requires_grad = True

@@ -9,7 +9,13 @@ from torch.utils.data import Sampler
 
 
 class PKBatchSampler(Sampler[list[int]]):
-    """Build batches with P classes and K samples per class."""
+    """Build batches with P classes and K samples per class.
+
+    This layout is important for SupCon: an anchor needs other examples of the
+    same class in its batch to form positive pairs. Indices are consumed from a
+    shuffled queue per class; when a queue is exhausted it is reshuffled, and a
+    class with fewer than K examples uses sampling with replacement.
+    """
 
     def __init__(
         self,
@@ -42,6 +48,7 @@ class PKBatchSampler(Sampler[list[int]]):
             )
 
     def __iter__(self) -> Iterator[list[int]]:
+        """Yield reproducibly shuffled batches, with a different order per epoch."""
         rng = random.Random(self.seed + self.epoch)
         self.epoch += 1
         classes = sorted(self.class_to_indices)
@@ -67,6 +74,7 @@ class PKBatchSampler(Sampler[list[int]]):
             yield batch
 
     def __len__(self) -> int:
+        """Return the number of batches exposed to the DataLoader."""
         if self.drop_last:
             return max(1, len(self.labels) // self.batch_size)
         return math.ceil(len(self.labels) / self.batch_size)
@@ -78,6 +86,7 @@ class PKBatchSampler(Sampler[list[int]]):
         class_cursors: dict[int, int],
         rng: random.Random,
     ) -> list[int]:
+        """Take K indices from one class, recycling its queue when necessary."""
         indices = class_queues[label]
         cursor = class_cursors[label]
 

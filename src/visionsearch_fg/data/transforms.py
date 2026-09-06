@@ -15,7 +15,13 @@ def build_classification_transform(
     train: bool = True,
     augmentation: AugmentationName = "hflip",
 ) -> transforms.Compose:
-    """Build lightweight ImageNet-style transforms for transfer learning."""
+    """Build the image pipeline used by classification and retrieval models.
+
+    Training augmentations are deliberately selected by name so an experiment
+    YAML file can change one augmentation policy without changing Python code.
+    Validation and test images always use deterministic resizing. All branches
+    finish with the ImageNet normalization expected by the pretrained models.
+    """
     if train and augmentation == "basic":
         return _with_normalization([transforms.Resize((image_size, image_size))])
 
@@ -50,7 +56,12 @@ def build_classification_transform(
 
 
 class TwoViewTransform:
-    """Apply the same transform pipeline twice to create two augmented views."""
+    """Create two independent views for supervised contrastive learning.
+
+    The same transform object is called twice, but random torchvision
+    transforms sample fresh randomness on each call. The two returned tensors
+    therefore depict the same source image with potentially different views.
+    """
 
     def __init__(self, base_transform: transforms.Compose) -> None:
         self.base_transform = base_transform
@@ -63,6 +74,7 @@ def build_two_view_transform(
     image_size: int = 224,
     augmentation: AugmentationName = "rrc_hflip_colorjitter",
 ) -> TwoViewTransform:
+    """Build the default two-view augmentation pipeline."""
     return TwoViewTransform(
         build_classification_transform(
             image_size=image_size,
@@ -73,6 +85,7 @@ def build_two_view_transform(
 
 
 def _with_normalization(transform_steps: list) -> transforms.Compose:
+    """Append tensor conversion and ImageNet normalization to a pipeline."""
     return transforms.Compose(
         [
             *transform_steps,
