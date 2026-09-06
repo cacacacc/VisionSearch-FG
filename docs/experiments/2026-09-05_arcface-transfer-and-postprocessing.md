@@ -163,13 +163,13 @@ $runConvArc = Get-ChildItem outputs\checkpoints\foreground_convnextv2_tiny_bbox4
 
 Swin-Tiny ArcFace 的 Flip TTA 带来小幅但稳定的 mAP 提升：从 `77.30%` 提升到 `77.71%`。这说明 ArcFace embedding 对水平翻转平均仍然受益，但提升幅度不大，表示单视角 embedding 已经比较稳定。
 
-Query Expansion 继续提升完整排序质量。最佳 mAP 来自 `top3 alpha0.5`，达到 `78.62%`，成为当前项目整体最高 mAP。最佳 Recall@1 来自 `top3 alpha0.2`，达到 `83.17%`，与此前 ConvNeXt V2 Tiny BBox448 + TTA + QE 的 Recall@1 持平。
+Query Expansion 继续提升完整排序质量。最佳 mAP 来自 `top3 alpha0.5`，达到 `78.62%`，成为 Swin-Tiny ArcFace 路线的最高 mAP。最佳 Recall@1 来自 `top3 alpha0.2`，达到 `83.17%`，与此前 ConvNeXt V2 Tiny BBox448 + TTA + QE 的 Recall@1 持平。
 
 需要注意的是，QE 提升 mAP 的同时会降低 Recall@5 / Recall@10。`top3 alpha0.5` 的 mAP 最高，但 Recall@5 从 `91.33%` 下降到 `90.33%`。这说明 Query Expansion 更擅长改善相关样本的整体排序位置，但过强的 expansion 也会带来一定 query drift。
 
 ConvNeXt V2 Tiny BBox448 + ArcFace 进一步刷新主结果。基础检索 mAP 为 `81.33%`，已经明显超过 Swin-Tiny BBox224 ArcFace + TTA + QE 的 `78.62%`。这说明 strong backbone、foreground-aware high-resolution input 和 angular margin objective 可以叠加。
 
-Flip TTA 将 ConvNeXt ArcFace 的 mAP 从 `81.33%` 提升到 `82.34%`，同时 Recall@1 从 `85.75%` 提升到 `86.50%`。继续加入 Query Expansion 后，最佳 mAP 来自 `top3 alpha0.5`，达到 `82.81%`；最佳 Recall@1 来自 `top3 alpha0.1`，达到 `86.67%`。与 Swin ArcFace 类似，QE 主要提升 mAP，但会牺牲部分 Recall@5，因此正式报告时应同时列出 TTA-only 和 TTA+QE 两种设置。
+Flip TTA 将 ConvNeXt ArcFace 的 mAP 从 `81.33%` 提升到 `82.34%`，同时 Recall@1 从 `85.75%` 提升到 `86.50%`。继续加入 Query Expansion 后，最佳 mAP 来自 `top3 alpha0.5`，达到 `82.81%`，这是 11.2 阶段的最高 mAP；最佳 Recall@1 来自 `top3 alpha0.1`，达到 `86.67%`。与 Swin ArcFace 类似，QE 主要提升 mAP，但会牺牲部分 Recall@5，因此正式报告时应同时列出 TTA-only 和 TTA+QE 两种设置。
 
 ## 预期解释
 
