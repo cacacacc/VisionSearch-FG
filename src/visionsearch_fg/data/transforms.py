@@ -15,12 +15,11 @@ def build_classification_transform(
     train: bool = True,
     augmentation: AugmentationName = "hflip",
 ) -> transforms.Compose:
-    """Build the image pipeline used by classification and retrieval models.
+    """构建分类和检索模型共用的图像处理流水线。
 
-    Training augmentations are deliberately selected by name so an experiment
-    YAML file can change one augmentation policy without changing Python code.
-    Validation and test images always use deterministic resizing. All branches
-    finish with the ImageNet normalization expected by the pretrained models.
+    训练增强通过名称选择，使实验 YAML 可以只改变数据增强策略而不修改
+    Python 代码。验证和测试图像始终使用确定性的 resize。所有分支最后都会执行
+    预训练模型所需的 ImageNet 归一化。
     """
     if train and augmentation == "basic":
         return _with_normalization([transforms.Resize((image_size, image_size))])
@@ -56,11 +55,10 @@ def build_classification_transform(
 
 
 class TwoViewTransform:
-    """Create two independent views for supervised contrastive learning.
+    """为监督式对比学习创建两个独立视图。
 
-    The same transform object is called twice, but random torchvision
-    transforms sample fresh randomness on each call. The two returned tensors
-    therefore depict the same source image with potentially different views.
+    同一个变换对象会被调用两次，但随机 torchvision 变换每次调用都会
+    重新采样随机性。因此返回的两个张量来自同一张原图，但可能具有不同增强视角。
     """
 
     def __init__(self, base_transform: transforms.Compose) -> None:
@@ -74,7 +72,7 @@ def build_two_view_transform(
     image_size: int = 224,
     augmentation: AugmentationName = "rrc_hflip_colorjitter",
 ) -> TwoViewTransform:
-    """Build the default two-view augmentation pipeline."""
+    """构建默认的双视图数据增强流水线。"""
     return TwoViewTransform(
         build_classification_transform(
             image_size=image_size,
@@ -85,7 +83,7 @@ def build_two_view_transform(
 
 
 def _with_normalization(transform_steps: list) -> transforms.Compose:
-    """Append tensor conversion and ImageNet normalization to a pipeline."""
+    """在流水线末尾追加张量转换和 ImageNet 归一化。"""
     return transforms.Compose(
         [
             *transform_steps,

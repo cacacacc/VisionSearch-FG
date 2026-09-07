@@ -8,11 +8,10 @@ def macro_f1_score(
     targets: torch.Tensor,
     num_classes: int | None = None,
 ) -> float:
-    """Compute the unweighted mean of per-class F1 scores.
+    """计算各类别 F1 的未加权平均值。
 
-    When ``num_classes`` is omitted, only classes appearing in ``targets`` are
-    averaged. Supplying it evaluates the complete class range and assigns zero
-    to classes with no true positives, which is useful for fixed-class reports.
+    如果省略 ``num_classes``，只统计 ``targets`` 中出现过的类别。传入该参数时会
+    评估完整类别范围，并把没有真阳性的类别记为 0，适合固定类别数的实验报告。
     """
     if predictions.ndim != 1:
         raise ValueError(
@@ -34,8 +33,7 @@ def macro_f1_score(
 
     f1_scores = []
     for class_id in class_ids:
-        # Count one-vs-rest outcomes for this class. The macro average later
-        # gives each class equal importance regardless of its sample count.
+        # 统计当前类别的一对其余分类结果，后续宏平均会让每个类别权重相同。
         true_positive = ((predictions == class_id) & (targets == class_id)).sum().float()
         false_positive = ((predictions == class_id) & (targets != class_id)).sum().float()
         false_negative = ((predictions != class_id) & (targets == class_id)).sum().float()
@@ -49,7 +47,7 @@ def macro_f1_score(
 
 
 def top_k_accuracy(logits: torch.Tensor, targets: torch.Tensor, k: int = 1) -> float:
-    """Compute the fraction whose target appears among the k largest logits."""
+    """计算真实类别出现在前 k 个最大 logit 中的样本比例。"""
     if logits.ndim != 2:
         raise ValueError(f"logits must have shape [batch, num_classes], got {tuple(logits.shape)}")
     if targets.ndim != 1:
@@ -66,5 +64,5 @@ def top_k_accuracy(logits: torch.Tensor, targets: torch.Tensor, k: int = 1) -> f
 
 
 def accuracy(logits: torch.Tensor, targets: torch.Tensor) -> float:
-    """Compute ordinary top-1 accuracy through the shared Top-K implementation."""
+    """通过共享的 Top-K 实现计算普通 top-1 accuracy。"""
     return top_k_accuracy(logits=logits, targets=targets, k=1)

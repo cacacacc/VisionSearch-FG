@@ -11,12 +11,11 @@ FineTuneMode = Literal["frozen", "partial", "full"]
 
 
 class TimmClassifier(nn.Module):
-    """Generic timm image classifier that exposes pooled visual embeddings.
+    """暴露池化视觉嵌入的通用 timm 图像分类器。
 
-    ``timm`` supplies many backbones with different output conventions. This
-    wrapper standardizes them into one interface returning ``logits`` and a
-    two-dimensional embedding, while allowing configuration-driven partial
-    fine-tuning by module path.
+    ``timm`` 提供大量主干网络，且输出约定各不相同。该封装器将它们标准化为
+    统一接口，返回 ``logits`` 和二维嵌入，同时支持通过配置中的模块路径
+    执行部分微调。
     """
 
     def __init__(
@@ -39,8 +38,7 @@ class TimmClassifier(nn.Module):
             ) from error
 
         timm_kwargs = dict(model_kwargs or {})
-        # Remove wrapper-level pooling configuration before forwarding the
-        # remaining model-specific options to timm.create_model.
+        # 先移除封装层的池化配置，再把其余模型专属选项传给 timm.create_model。
         global_pool = timm_kwargs.pop("global_pool", "avg")
         backbone = timm.create_model(
             model_name,
@@ -66,13 +64,13 @@ class TimmClassifier(nn.Module):
         )
 
     def forward(self, images: torch.Tensor) -> ModelOutput:
-        """Run the selected timm encoder and canonicalize its feature shape."""
+        """运行所选 timm encoder，并统一其特征形状。"""
         embedding = self.backbone(images)
         if embedding.ndim == 4:
-            # Some CNN backbones return [B, C, H, W] despite global_pool=none.
+            # 某些 CNN 主干网络即使设置 global_pool=none 也会返回 [B, C, H, W]。
             embedding = embedding.mean(dim=(-2, -1))
         elif embedding.ndim > 2:
-            # Token-based backbones may return extra spatial/token dimensions.
+            # 基于 token 的主干网络可能返回额外的空间或 token 维度。
             embedding = torch.flatten(embedding, start_dim=1)
         logits = self.classifier(embedding)
         return ModelOutput(logits=logits, embedding=embedding)
@@ -82,7 +80,7 @@ class TimmClassifier(nn.Module):
         mode: FineTuneMode,
         trainable_backbone_layers: list[str] | None = None,
     ) -> None:
-        """Apply frozen, full, or explicitly selected partial fine-tuning."""
+        """应用冻结、全量微调或显式指定的部分微调。"""
         if mode == "full":
             for parameter in self.backbone.parameters():
                 parameter.requires_grad = True
@@ -128,7 +126,7 @@ def build_timm_classifier(
 
 
 def _resolve_module(root: nn.Module, module_path: str) -> nn.Module:
-    """Resolve dotted attribute/index paths such as ``stages.3.blocks.0``."""
+    """解析类似 ``stages.3.blocks.0`` 的点分属性/索引路径。"""
     module: nn.Module = root
     for part in module_path.split("."):
         if part.isdigit() and isinstance(module, (nn.Sequential, nn.ModuleList)):

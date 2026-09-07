@@ -1,4 +1,4 @@
-"""Embedding indexing and image retrieval metrics."""
+"""Embedding 索引和图像检索指标。"""
 
 from visionsearch_fg.retrieval.metrics import (
     RetrievalMetric,

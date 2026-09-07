@@ -14,7 +14,7 @@ def build_prediction_records(
     class_names: list[str],
     top_k: int = 5,
 ) -> list[dict[str, Any]]:
-    """Convert model outputs into JSON-serializable prediction records."""
+    """将模型输出转换为可 JSON 序列化的预测记录。"""
     if logits.ndim != 2:
         raise ValueError("logits must have shape [batch_size, num_classes]")
     if labels.ndim != 1:
@@ -57,7 +57,7 @@ def build_prediction_records(
 
 
 def summarize_prediction_records(records: list[dict[str, Any]]) -> dict[str, float | int]:
-    """Summarize per-image prediction records into aggregate metrics."""
+    """将逐图像预测记录汇总为整体指标。"""
     if not records:
         return {
             "total_samples": 0,

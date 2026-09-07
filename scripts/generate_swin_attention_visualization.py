@@ -243,11 +243,10 @@ def select_records(
 
 
 class SwinFeatureVisualizer:
-    """Gradient-weighted visualization over Swin's final spatial feature map.
+    """基于 Swin 最终空间特征图的梯度加权可视化。
 
-    Torchvision's Swin implementation does not expose attention weights directly.
-    This class visualizes class-relevant final-stage token features as an
-    attention-style proxy for qualitative analysis.
+    torchvision 的 Swin 实现不会直接暴露 attention weights。该类将类别相关的
+    最终阶段 token 特征可视化，作为定性分析中的注意力近似证据。
     """
 
     def __init__(self, model: torch.nn.Module) -> None:

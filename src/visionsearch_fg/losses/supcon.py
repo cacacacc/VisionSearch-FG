@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 
 class SupConLoss(nn.Module):
-    """Supervised contrastive loss for two or more augmented views per sample."""
+    """用于每个样本两个或更多增强视图的监督式对比损失。"""
 
     def __init__(self, temperature: float = 0.07, eps: float = 1e-12) -> None:
         super().__init__()

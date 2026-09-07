@@ -13,7 +13,7 @@ MarginType = Literal["arcface", "cosface"]
 
 @dataclass(frozen=True)
 class AngularMarginOutput:
-    """Output bundle for margin-based classification and optional contrastive use."""
+    """用于 margin 分类和可选对比学习的输出集合。"""
 
     logits: torch.Tensor
     embedding: torch.Tensor
@@ -21,12 +21,11 @@ class AngularMarginOutput:
 
 
 class AngularMarginHead(nn.Module):
-    """ArcFace/CosFace classification head over L2-normalized embeddings.
+    """作用在 L2-normalized embedding 上的 ArcFace/CosFace 分类头。
 
-    Normalized class weights and embeddings make the linear output a cosine
-    similarity. ArcFace adds the margin in angle space; CosFace subtracts it
-    directly from the target cosine. The scale restores a useful logit range
-    for cross-entropy after normalization.
+    归一化后的类别权重和 embedding 会让线性输出变成 cosine similarity。
+    ArcFace 在角度空间加入 margin；CosFace 直接从目标类别 cosine 中减去 margin。
+    scale 用于在归一化后恢复适合 cross-entropy 的 logit 数值范围。
     """
 
     def __init__(
@@ -60,11 +59,10 @@ class AngularMarginHead(nn.Module):
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, embeddings: torch.Tensor, labels: torch.Tensor | None = None) -> torch.Tensor:
-        """Produce margin-adjusted logits when labels are supplied.
+        """在提供 labels 时生成加入 margin 的 logits。
 
-        Labels are optional so the same head can produce inference logits
-        without modifying a target class. During training, only the target
-        class logit receives the angular margin.
+        labels 是可选的，因此同一个 head 可以在推理阶段生成不修改目标类别的 logits。
+        训练阶段只有真实类别 logit 会加入 angular margin。
         """
         cosine = F.linear(F.normalize(embeddings, dim=1), F.normalize(self.weight, dim=1))
         if labels is None:
@@ -89,11 +87,10 @@ class AngularMarginHead(nn.Module):
 
 
 class AngularMarginClassifier(nn.Module):
-    """Wrap an embedding classifier with an ArcFace/CosFace head.
+    """用 ArcFace/CosFace head 包装一个 embedding 分类器。
 
-    The base classifier contributes its backbone, while the ordinary linear
-    classification layer is replaced by the margin head. An optional projection
-    head keeps this model compatible with joint margin and SupCon experiments.
+    base classifier 提供 backbone，普通线性分类层会被 margin head 替换。
+    可选 projection head 让该模型兼容 margin 与 SupCon 的联合实验。
     """
 
     def __init__(
@@ -145,7 +142,7 @@ class AngularMarginClassifier(nn.Module):
         images: torch.Tensor,
         labels: torch.Tensor | None = None,
     ) -> AngularMarginOutput:
-        """Encode images and apply the selected margin head to their labels."""
+        """编码图像，并把所选 margin head 应用到对应 labels。"""
         embedding = self.backbone(images)
         if embedding.ndim == 4:
             embedding = embedding.mean(dim=(-2, -1))
@@ -157,7 +154,7 @@ class AngularMarginClassifier(nn.Module):
 
 
 def default_margin_for_type(margin_type: MarginType) -> float:
-    """Return the project defaults used for ArcFace and CosFace experiments."""
+    """返回项目中 ArcFace 和 CosFace 实验使用的默认 margin。"""
     if margin_type == "arcface":
         return 0.5
     if margin_type == "cosface":
@@ -166,5 +163,5 @@ def default_margin_for_type(margin_type: MarginType) -> float:
 
 
 def degrees_from_radians(value: float) -> float:
-    """Convert an angular margin from radians to degrees for readable reports."""
+    """将弧度制 angular margin 转为角度，便于报告展示。"""
     return value * 180.0 / math.pi

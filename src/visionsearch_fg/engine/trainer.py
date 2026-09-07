@@ -35,12 +35,11 @@ def train_one_epoch(
     device: torch.device,
     max_batches: int | None = None,
 ) -> TrainStats:
-    """Run one optimization pass and return sample-weighted statistics.
+    """执行一个 epoch 的优化，并返回按样本数加权的统计量。
 
-    Loss and accuracy are accumulated after multiplying each batch statistic by
-    its batch size. This makes the result correct even when the final batch is
-    smaller than the others. ``max_batches`` is intended for CPU smoke tests
-    and quick debugging, not for silently changing a formal experiment.
+    loss 和 accuracy 会先乘以 batch size 再累计，因此即使最后一个 batch 较小，
+    统计结果也仍然正确。``max_batches`` 只用于 CPU smoke test 和快速调试，
+    不应被用于悄悄改变正式实验协议。
     """
     model.train()
 
@@ -50,8 +49,7 @@ def train_one_epoch(
 
     progress = tqdm(_limit_batches(dataloader, max_batches), desc="train", leave=False)
     for batch in progress:
-        # The dataset returns a dictionary so metadata can travel through the
-        # loader, but the optimization step only consumes image tensors/labels.
+        # 数据集返回字典以保留元数据，但优化步骤只使用图像张量和标签。
         images = batch["image"].to(device)
         labels = batch["label"].to(device)
 
@@ -88,10 +86,10 @@ def validate(
     device: torch.device,
     max_batches: int | None = None,
 ) -> EvalStats:
-    """Evaluate without gradients and compute classification diagnostics.
+    """在无梯度模式下评估模型，并计算分类诊断指标。
 
-    Predictions and labels are collected on CPU so macro-F1 can be computed
-    over the complete validation set rather than averaging per-batch F1 scores.
+    prediction 和 label 会收集到 CPU 上，从而在完整验证集上计算 macro-F1，
+    而不是对每个 batch 的 F1 做平均。
     """
     model.eval()
 
@@ -113,7 +111,7 @@ def validate(
         batch_size = labels.shape[0]
         batch_accuracy = accuracy(output.logits, labels)
         batch_top5_accuracy = top_k_accuracy(output.logits, labels, k=5)
-        # Keep the class decision for the full-set macro-F1 calculation below.
+        # 保留类别预测，用于后续完整验证集级别的 macro-F1 计算。
         predictions = output.logits.argmax(dim=1)
 
         total_loss += loss.item() * batch_size

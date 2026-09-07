@@ -9,12 +9,11 @@ from torch.utils.data import Sampler
 
 
 class PKBatchSampler(Sampler[list[int]]):
-    """Build batches with P classes and K samples per class.
+    """构建每个 batch 含 P 个类别、每类 K 个样本的采样器。
 
-    This layout is important for SupCon: an anchor needs other examples of the
-    same class in its batch to form positive pairs. Indices are consumed from a
-    shuffled queue per class; when a queue is exhausted it is reshuffled, and a
-    class with fewer than K examples uses sampling with replacement.
+    这种结构对 SupCon 很重要：anchor 需要在同一个 batch 内看到同类别的其他样本，
+    才能形成 positive pair。每个类别都有独立的打乱队列；队列耗尽后重新打乱，
+    样本数少于 K 的类别使用有放回采样。
     """
 
     def __init__(
@@ -48,7 +47,7 @@ class PKBatchSampler(Sampler[list[int]]):
             )
 
     def __iter__(self) -> Iterator[list[int]]:
-        """Yield reproducibly shuffled batches, with a different order per epoch."""
+        """生成可复现但每个 epoch 顺序不同的 batch。"""
         rng = random.Random(self.seed + self.epoch)
         self.epoch += 1
         classes = sorted(self.class_to_indices)
@@ -74,7 +73,7 @@ class PKBatchSampler(Sampler[list[int]]):
             yield batch
 
     def __len__(self) -> int:
-        """Return the number of batches exposed to the DataLoader."""
+        """返回暴露给 DataLoader 的 batch 数量。"""
         if self.drop_last:
             return max(1, len(self.labels) // self.batch_size)
         return math.ceil(len(self.labels) / self.batch_size)
@@ -86,7 +85,7 @@ class PKBatchSampler(Sampler[list[int]]):
         class_cursors: dict[int, int],
         rng: random.Random,
     ) -> list[int]:
-        """Take K indices from one class, recycling its queue when necessary."""
+        """从一个类别中取 K 个索引，并在必要时循环使用该类别队列。"""
         indices = class_queues[label]
         cursor = class_cursors[label]
 

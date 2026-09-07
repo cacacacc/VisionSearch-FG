@@ -1,4 +1,4 @@
-"""Analysis utilities for predictions and model behavior."""
+"""预测结果和模型行为分析工具。"""
 
 from visionsearch_fg.analysis.predictions import (
     build_prediction_records,

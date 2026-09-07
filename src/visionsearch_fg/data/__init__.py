@@ -1,4 +1,4 @@
-"""Dataset loading and preprocessing utilities."""
+"""数据集读取和预处理工具。"""
 
 from visionsearch_fg.data.cub import CUB200Dataset, CUBSample, crop_image_to_bbox
 from visionsearch_fg.data.samplers import PKBatchSampler

@@ -15,11 +15,10 @@ BBox = tuple[float, float, float, float]
 
 @dataclass(frozen=True)
 class CUBSample:
-    """Immutable description of one CUB image before it is loaded.
+    """一张 CUB 图像在实际读取前的不可变元数据。
 
-    Keeping metadata separate from the decoded image makes dataset indexing
-    cheap and lets the same sample record support classification, retrieval,
-    and optional bounding-box cropping.
+    将元数据和解码后的图像分开，可以降低索引成本，并让同一个样本记录同时支持
+    分类、检索和可选的 bounding box 裁剪。
     """
 
     image_id: int
@@ -31,12 +30,11 @@ class CUBSample:
 
 
 class CUB200Dataset(Dataset):
-    """CUB-200-2011 dataset reader for classification and embedding learning.
+    """用于分类和 embedding 学习的 CUB-200-2011 数据集读取器。
 
-    CUB distributes several text files instead of one annotation table. The
-    constructor joins those files by ``image_id`` and materializes a validated
-    sample list. ``__getitem__`` then performs only per-image work: opening the
-    image, applying the optional bounding-box crop, and running the transform.
+    CUB 使用多个文本文件保存标注，而不是单个 annotation table。构造函数会按
+    ``image_id`` 合并这些文件，并生成经过校验的样本列表。``__getitem__``
+    只负责逐图像操作：打开图像、执行可选的 bounding box 裁剪，以及应用 transform。
     """
 
     def __init__(
@@ -70,7 +68,7 @@ class CUB200Dataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index: int) -> dict:
-        """Load one image and return the tensor plus retrieval-friendly metadata."""
+        """读取一张图像，并返回张量和检索友好的元数据。"""
         sample = self.samples[index]
 
         with Image.open(sample.image_path) as image:
@@ -79,8 +77,7 @@ class CUB200Dataset(Dataset):
         if self.crop_mode == "bbox":
             if sample.bbox is None:
                 raise ValueError(f"Missing bounding box for image id {sample.image_id}.")
-            # Crop before the transform so resizing and normalization operate
-            # on the bird region rather than on the original full image.
+            # 在图像变换前裁剪，使尺寸调整和归一化作用在鸟主体区域上。
             image = crop_image_to_bbox(image, sample.bbox, margin=self.bbox_margin)
 
         if self.transform is not None:
@@ -96,7 +93,7 @@ class CUB200Dataset(Dataset):
         }
 
     def _load_samples(self) -> list[CUBSample]:
-        """Join CUB metadata files and apply the requested split/filter."""
+        """合并 CUB 元数据文件，并应用指定的 split/filter。"""
         images = _read_id_text_file(self.root / "images.txt")
         labels = _read_id_int_file(self.root / "image_class_labels.txt")
         split_flags = _read_id_int_file(self.root / "train_test_split.txt")
@@ -115,9 +112,8 @@ class CUB200Dataset(Dataset):
                 raise ValueError(f"Missing train/test split flag for image id {image_id}.")
 
             is_train = split_flags[image_id] == 1
-            # CUB's official split is kept intact here. A separate helper can
-            # subdivide the official training set into train and validation IDs
-            # without changing the official test set.
+            # 这里保留 CUB 官方划分。单独的辅助函数会在官方训练集内部再划分
+            # 训练/验证 ID，不改变官方测试集。
             if self.split == "train" and not is_train:
                 continue
             if self.split == "test" and is_train:
@@ -154,11 +150,10 @@ class CUB200Dataset(Dataset):
 
 
 def crop_image_to_bbox(image: Image.Image, bbox: BBox, margin: float = 0.0) -> Image.Image:
-    """Crop an image to a CUB box, optionally expanding it by a ratio.
+    """按 CUB bounding box 裁剪图像，并可按比例向外扩展。
 
-    CUB stores boxes as ``(x, y, width, height)``. The margin is applied to
-    both sides of each dimension, then coordinates are clipped to the image so
-    a generous margin cannot create an invalid crop outside the file bounds.
+    CUB 的 box 格式为 ``(x, y, width, height)``。margin 会作用于宽高两个方向的
+    两侧，随后坐标会被限制在图像范围内，避免过大的 margin 产生越界裁剪。
     """
     x, y, width, height = bbox
     if width <= 0 or height <= 0:

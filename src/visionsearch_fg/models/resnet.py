@@ -12,18 +12,17 @@ FineTuneMode = Literal["frozen", "partial", "full"]
 
 @dataclass(frozen=True)
 class ModelOutput:
-    """Common classifier result: class logits plus the retrieval embedding."""
+    """通用分类输出：类别 logits 加检索 embedding。"""
 
     logits: torch.Tensor
     embedding: torch.Tensor
 
 
 class ResNet18Classifier(nn.Module):
-    """ResNet-18 classifier that also exposes visual embeddings.
+    """同时暴露视觉 embedding 的 ResNet-18 分类器。
 
-    The original ImageNet fully connected layer is replaced with an identity
-    module. The resulting 512-dimensional backbone output is retained as the
-    embedding and sent to a new CUB classifier head.
+    原始 ImageNet 全连接层被替换为 identity 模块。得到的 512 维 backbone 输出会
+    保留为 embedding，并送入新的 CUB 分类头。
     """
 
     def __init__(
@@ -38,7 +37,7 @@ class ResNet18Classifier(nn.Module):
         weights = ResNet18_Weights.DEFAULT if pretrained else None
         backbone = resnet18(weights=weights)
 
-        # Removing the original 1000-class head turns ResNet into an encoder.
+        # 移除原始 1000 类分类头，把 ResNet 转换为编码器。
         embedding_dim = backbone.fc.in_features
         backbone.fc = nn.Identity()
 
@@ -54,7 +53,7 @@ class ResNet18Classifier(nn.Module):
         )
 
     def forward(self, images: torch.Tensor) -> ModelOutput:
-        """Encode a batch and classify it without discarding the embedding."""
+        """编码一个 batch 并完成分类，同时保留 embedding。"""
         embedding = self.backbone(images)
         logits = self.classifier(embedding)
         return ModelOutput(logits=logits, embedding=embedding)
@@ -64,7 +63,7 @@ class ResNet18Classifier(nn.Module):
         mode: FineTuneMode,
         trainable_backbone_layers: list[str] | None = None,
     ) -> None:
-        """Set trainable backbone parameters for frozen, partial, or full tuning."""
+        """按 frozen、partial 或 full 模式设置 backbone 的可训练参数。"""
         if mode == "full":
             for parameter in self.backbone.parameters():
                 parameter.requires_grad = True

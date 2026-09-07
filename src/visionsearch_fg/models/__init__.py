@@ -1,4 +1,4 @@
-"""Backbones, classification heads, and embedding models."""
+"""Backbone、分类头和 embedding 模型。"""
 
 from visionsearch_fg.models.angular_margin import (
     AngularMarginClassifier,
